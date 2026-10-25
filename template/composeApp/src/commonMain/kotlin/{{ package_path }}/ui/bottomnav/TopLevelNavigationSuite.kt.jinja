@@ -1,0 +1,76 @@
+package {{ package_name }}.ui.bottomnav
+
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.compose.currentBackStackEntryAsState
+import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.tab_items
+import {{ package_name }}.resources.tab_settings
+import {{ package_name }}.ui.base.navigation.navigateToTopLevel
+import {{ package_name }}.ui.main.MainRoute
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+
+// The bar shows only on these routes; every other screen covers it.
+enum class TopLevelDestination(
+    val route: MainRoute,
+    val label: StringResource,
+    val icon: ImageVector,
+    val selectedIcon: ImageVector,
+) {
+    ITEMS(MainRoute.Home, Res.string.tab_items, Icons.AutoMirrored.Outlined.List, Icons.AutoMirrored.Filled.List),
+    SETTINGS(MainRoute.Settings, Res.string.tab_settings, Icons.Outlined.Settings, Icons.Filled.Settings),
+}
+
+@Composable
+fun TopLevelNavigationSuite(
+    navController: NavController,
+    content: @Composable () -> Unit,
+) {
+    val currentDestination = navController.currentBackStackEntryAsState().value?.destination
+    val current =
+        TopLevelDestination.entries.firstOrNull { destination ->
+            currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
+        }
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    // Hidden while typing: the keyboard covers the bar, and its height would otherwise be padded twice.
+    val layoutType =
+        if (current == null || imeVisible) {
+            NavigationSuiteType.None
+        } else {
+            NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+        }
+
+    NavigationSuiteScaffold(
+        layoutType = layoutType,
+        navigationSuiteItems = {
+            TopLevelDestination.entries.forEach { destination ->
+                val selected = destination == current
+                item(
+                    selected = selected,
+                    onClick = { navController.navigateToTopLevel(destination.route) },
+                    icon = { Icon(if (selected) destination.selectedIcon else destination.icon, contentDescription = null) },
+                    label = { Text(stringResource(destination.label)) },
+                )
+            }
+        },
+        content = content,
+    )
+}

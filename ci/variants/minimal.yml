@@ -1,4 +1,3 @@
 include_persistence: false
 include_networking: false
 include_bottom_nav: false
-include_theme_components: false

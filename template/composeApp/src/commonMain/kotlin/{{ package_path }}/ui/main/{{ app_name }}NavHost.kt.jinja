@@ -9,6 +9,10 @@ import androidx.navigation.compose.NavHost
 import {{ package_name }}.ui.base.navigation.DeeplinkManager
 import {{ package_name }}.ui.base.navigation.NavGraphDefinition
 import {{ package_name }}.ui.base.navigation.NavigationTarget
+import {{ package_name }}.ui.base.navigation.navigateToTopLevel
+{%- if include_bottom_nav %}
+import {{ package_name }}.ui.bottomnav.TopLevelNavigationSuite
+{%- endif %}
 import org.koin.android.annotation.KoinViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -24,6 +28,17 @@ fun {{ app_name }}NavHost(
     modifier: Modifier = Modifier,
     viewModel: NavViewModel = koinViewModel(),
 ) {
+{%- if include_bottom_nav %}
+    TopLevelNavigationSuite(navController) {
+        NavHost(
+            navController = navController,
+            startDestination = MainRoute.Root,
+            modifier = modifier,
+        ) {
+            viewModel.navGraphs.forEach { it.build(navGraphBuilder = this, navController) }
+        }
+    }
+{%- else %}
     NavHost(
         navController = navController,
         startDestination = MainRoute.Root,
@@ -31,11 +46,12 @@ fun {{ app_name }}NavHost(
     ) {
         viewModel.navGraphs.forEach { it.build(navGraphBuilder = this, navController) }
     }
+{%- endif %}
 
     LaunchedEffect(Unit) {
         viewModel.deeplinkManager.navigationAction.collect { target ->
             when (target) {
-                NavigationTarget.HOME -> navController.navigate(MainRoute.Home) { launchSingleTop = true }
+                NavigationTarget.HOME -> navController.navigateToTopLevel(MainRoute.Home)
             }
         }
     }

@@ -1,0 +1,13 @@
+package {{ package_name }}.ui.base.navigation
+
+import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+
+// Switches between root destinations: one entry each, state saved and restored, back returns to the start.
+fun NavController.navigateToTopLevel(destination: NavDestinationDefinition) {
+    navigate(destination) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}

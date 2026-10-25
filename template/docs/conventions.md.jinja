@@ -23,7 +23,11 @@ replace it — contradictions are bugs.
 - `event` is backed by `Channel(Channel.BUFFERED).receiveAsFlow()` so events emitted while nothing collects are kept.
 - The ViewModel never stores a navigation handle; it navigates through the `Navigator` passed into `intent(intent, navigator)`.
 - Streams become state through `inViewModelScope(initial)` only.
-- Navigation graphs implement `NavGraphDefinition` and are registered with `@Single(binds = [NavGraphDefinition::class])`; routes are `@Serializable` and implement `NavDestinationDefinition`.
+- Navigation graphs implement `NavGraphDefinition` and are registered with `@Single(binds = [NavGraphDefinition::class])`; routes are `@Serializable` and implement `NavDestinationDefinition`. There is one app-level graph.
+- A screen without state or logic may skip the ViewModel and contract.
+{%- if include_bottom_nav %}
+- Tabs are top-level `MainRoute`s listed in `TopLevelDestination`; the bar shows only on them and every other screen covers it. Switch tabs with `navigateToTopLevel` (back returns to the first tab, then exits).
+{%- endif %}
 
 ## Concurrency
 

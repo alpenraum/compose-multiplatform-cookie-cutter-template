@@ -5,6 +5,8 @@ import androidx.navigation.NavController
 interface Navigator {
     fun navigate(destination: NavDestinationDefinition)
 
+    fun navigateToTopLevel(destination: NavDestinationDefinition)
+
     fun navigateBack()
 }
 
@@ -13,6 +15,10 @@ class NavControllerNavigator(
 ) : Navigator {
     override fun navigate(destination: NavDestinationDefinition) {
         navController.navigate(destination)
+    }
+
+    override fun navigateToTopLevel(destination: NavDestinationDefinition) {
+        navController.navigateToTopLevel(destination)
     }
 
     override fun navigateBack() {

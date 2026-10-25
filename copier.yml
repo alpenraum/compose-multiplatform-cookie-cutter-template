@@ -17,6 +17,8 @@ _exclude:
   - "{% if not include_persistence %}composeApp/db-schemas{% endif %}"
   - "{% if not include_networking %}composeApp/src/*/kotlin/**/base/network{% endif %}"
   - "{% if not include_networking %}composeApp/src/*/kotlin/**/data/remote{% endif %}"
+  - "{% if not include_bottom_nav %}composeApp/src/*/kotlin/**/ui/bottomnav{% endif %}"
+  - "{% if not include_bottom_nav %}composeApp/src/*/kotlin/**/ui/settings{% endif %}"
   - "{% if not include_networking %}composeApp/src/*/kotlin/**/ErrorLocalizerTest.kt{% endif %}"
   - "{% if include_persistence %}composeApp/src/*/kotlin/**/InMemorySampleRepository.kt{% endif %}"
 
@@ -89,11 +91,6 @@ include_networking:
 include_bottom_nav:
   type: bool
   help: Adaptive bottom navigation (rail on wide screens); off = single start screen
-  default: true
-
-include_theme_components:
-  type: bool
-  help: Material3 app theme (light/dark), extended colours, font and generic component set
   default: true
 
 include_desktop:

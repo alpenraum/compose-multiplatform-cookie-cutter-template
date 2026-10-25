@@ -9,6 +9,9 @@ import {{ package_name }}.ui.base.navigation.NavDestinationDefinition
 import {{ package_name }}.ui.base.navigation.NavGraphDefinition
 import {{ package_name }}.ui.sample.SampleDetailFeature
 import {{ package_name }}.ui.sample.SampleFeature
+{%- if include_bottom_nav %}
+import {{ package_name }}.ui.settings.SettingsFeature
+{%- endif %}
 import kotlinx.serialization.Serializable
 import org.koin.core.annotation.Single
 
@@ -22,6 +25,11 @@ class MainNavigationGraph : NavGraphDefinition {
             composable<MainRoute.Home> {
                 SampleFeature(navController)
             }
+{%- if include_bottom_nav %}
+            composable<MainRoute.Settings> {
+                SettingsFeature()
+            }
+{%- endif %}
             composable<MainRoute.SampleDetail> { entry ->
                 SampleDetailFeature(navController, itemId = entry.toRoute<MainRoute.SampleDetail>().itemId)
             }
@@ -36,6 +44,11 @@ sealed interface MainRoute : NavDestinationDefinition {
 
     @Serializable
     data object Home : MainRoute
+{%- if include_bottom_nav %}
+
+    @Serializable
+    data object Settings : MainRoute
+{%- endif %}
 
     @Serializable
     data class SampleDetail(
