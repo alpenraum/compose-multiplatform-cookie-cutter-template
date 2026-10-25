@@ -1,0 +1,13 @@
+package {{ package_name }}.base
+
+expect object BuildInfo {
+    fun isDebug(): Boolean
+
+    fun osName(): String
+
+    fun osVersion(): String
+
+    fun appVersion(): String
+
+    fun appBuild(): String
+}

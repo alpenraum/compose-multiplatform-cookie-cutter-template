@@ -1,25 +1,41 @@
 package {{ package_name }}
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.util.Consumer
+import {{ package_name }}.ui.base.navigation.DeeplinkManager
+import {{ package_name }}.ui.base.navigation.NavigationTarget
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
+    private val deeplinkManager by inject<DeeplinkManager>()
+
+    private val newIntentListener = Consumer<Intent> { handleDeeplinkIntent(it) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // After process-death restore the launch intent still carries the extra; it was already handled.
+        if (savedInstanceState == null) handleDeeplinkIntent(intent)
+        addOnNewIntentListener(newIntentListener)
 
         setContent {
             App()
         }
     }
-}
 
-@Preview
-@Composable
-private fun AppAndroidPreview() {
-    App()
+    override fun onDestroy() {
+        removeOnNewIntentListener(newIntentListener)
+        super.onDestroy()
+    }
+
+    private fun handleDeeplinkIntent(intent: Intent) {
+        val target = NavigationTarget.valueOfIgnoreCase(intent.getStringExtra(DeeplinkManager.NAV_ARG)) ?: return
+        intent.removeExtra(DeeplinkManager.NAV_ARG)
+        deeplinkManager.onNewNavigationAction(target)
+    }
 }

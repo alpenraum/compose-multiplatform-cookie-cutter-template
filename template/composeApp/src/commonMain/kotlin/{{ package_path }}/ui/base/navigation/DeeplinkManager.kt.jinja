@@ -1,0 +1,30 @@
+package {{ package_name }}.ui.base.navigation
+
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import org.koin.core.annotation.Single
+
+@Single
+class DeeplinkManager {
+    // Buffered: a deeplink arriving before the NavHost collects (cold start) is kept, not dropped.
+    private val targets = Channel<NavigationTarget>(Channel.BUFFERED)
+
+    val navigationAction = targets.receiveAsFlow()
+
+    fun onNewNavigationAction(target: NavigationTarget) {
+        targets.trySend(target)
+    }
+
+    companion object {
+        const val NAV_ARG = "nav_arg"
+    }
+}
+
+enum class NavigationTarget {
+    HOME,
+    ;
+
+    companion object {
+        fun valueOfIgnoreCase(value: String?): NavigationTarget? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+    }
+}

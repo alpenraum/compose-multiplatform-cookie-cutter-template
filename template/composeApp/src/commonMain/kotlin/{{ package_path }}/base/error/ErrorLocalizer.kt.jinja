@@ -1,0 +1,19 @@
+package {{ package_name }}.base.error
+
+import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.error_unexpected_action
+import {{ package_name }}.resources.error_unexpected_message
+import org.jetbrains.compose.resources.StringResource
+
+data class ErrorText(
+    val message: StringResource,
+    val messageArgs: List<Any> = emptyList(),
+    val action: StringResource? = null,
+)
+
+object ErrorLocalizer {
+    fun localize(error: AppError): ErrorText =
+        when (error) {
+            is AppError.Unexpected -> ErrorText(Res.string.error_unexpected_message, action = Res.string.error_unexpected_action)
+        }
+}

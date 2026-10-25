@@ -1,0 +1,27 @@
+package {{ package_name }}.base.error
+
+import kotlin.coroutines.cancellation.CancellationException
+
+sealed interface AppError {
+    // Shown to users for support: structured facts only, never stack traces, URLs or payloads.
+    val technicalDetail: String
+
+    class Unexpected(
+        val cause: Throwable,
+    ) : AppError {
+        override val technicalDetail: String = "unexpected: ${cause::class.simpleName}"
+    }
+}
+
+class AppException(
+    val error: AppError,
+    cause: Throwable? = null,
+) : Exception(error.technicalDetail, cause)
+
+// Last resort: boundaries that know their failure modes throw a specific AppException first.
+fun Throwable.toAppError(): AppError =
+    when (this) {
+        is CancellationException -> throw this
+        is AppException -> error
+        else -> AppError.Unexpected(this)
+    }

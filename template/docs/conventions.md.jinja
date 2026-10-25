@@ -1,0 +1,58 @@
+# Conventions
+
+Project rules. One decision per bullet; each must be checkable in review. When a rule changes,
+replace it — contradictions are bugs.
+
+## Layers
+
+- Dependencies point inward: UI → ViewModel → use case → repository → DAO / HTTP client. Never the reverse.
+- UI holds no business logic. Repositories hold no business rules and return domain types, never DB entities or wire DTOs.
+- Business logic lives in use cases: one class, one job, a single `operator fun invoke`. Use cases never touch framework types (DAO, `HttpClient`, `NavController`).
+- A read that is only query → map goes ViewModel → repository directly; a use case exists only when there is a rule to hold.
+- Shared code lives in `commonMain`. Platform differences sit behind one `expect` declaration with `.android.kt` / `.ios.kt` actuals.
+
+## Presentation
+
+- One feature = one folder under `ui/` with `XFeature.kt` (composables) and `XViewModel.kt`.
+- Every screen has a contract `XContract : UnidirectionalViewModel<State, Intent, Event>` declaring `State`, `Intent` and `Event` inside it.
+- `State` is a sealed hierarchy, one variant per real screen condition — no bag of nullable fields and booleans.
+- Screens bind through `use(viewModel, navController)`, only ever call `dispatch(intent)`, and receive one-shot events through `CollectEvents`.
+- `event` is backed by `Channel(Channel.BUFFERED).receiveAsFlow()` so events emitted while nothing collects are kept.
+- The ViewModel never stores a navigation handle; it navigates through the `Navigator` passed into `intent(intent, navigator)`.
+- Streams become state through `inViewModelScope(initial)` only.
+- Navigation graphs implement `NavGraphDefinition` and are registered with `@Single(binds = [NavGraphDefinition::class])`; routes are `@Serializable` and implement `NavDestinationDefinition`.
+
+## Concurrency
+
+- Dispatchers come from the injected `DispatchersProvider`; never reference `Dispatchers.*` outside `DefaultDispatchersProvider`.
+- ViewModels start work with `BaseViewModel.launch`, which runs in `viewModelScope` on the injected main dispatcher. Repositories switch to `dispatchersProvider.io` themselves (main-safe).
+
+## Errors
+
+- Every failure is a typed `AppError`. No strings, booleans or nulls as error signals.
+- Library exceptions (SQL, HTTP, filesystem) are converted at the boundary that produced them and thrown as `AppException`.
+- `BaseViewModel.launch` is the catch site for commands: it logs, converts with `toAppError()` and calls `onError`. A failing `Flow` that feeds state is caught with `.catch { }` and becomes a failure `State` variant.
+- User-facing text comes only from `ErrorLocalizer`; screens show failures with `ErrorView`, which keeps the technical detail as a separate selectable block.
+- `technicalDetail` holds structured facts (error type, status, code) — never stack traces, URLs, tokens or payloads. Full traces go to the logger.
+- Never "Something went wrong": every message says what happened and, where possible, what the user can do.
+- No empty catch and no catch-log-continue without an explicit decision about the failed operation. `CancellationException` is always rethrown.
+
+## Dependency injection
+
+- Classes are registered with Koin annotations (`@Single`, `@Factory`, `@KoinViewModel`) in `commonMain`; only platform objects go into the `platformModule()` DSL.
+- Dependencies arrive through constructors. No `KoinComponent`, no global or static mutable state, no `object` holding dependencies.
+
+## Logging
+
+- Log through `{{ app_name }}Logger`. `BaseViewModel` and `WithLogger` tag it once with the owning class; never pass a tag per call.
+- Never log tokens, passwords, keys or personal data.
+
+## Testing
+
+- Tests live in `commonTest`.
+- Each test names the behaviour it protects. No tests asserting that the language or a framework works.
+- No test depends on wall-clock time, real network or real hardware.
+
+## Comments
+
+- Comments explain a non-obvious *why* only, never restate the code, and are never longer than the code they explain.

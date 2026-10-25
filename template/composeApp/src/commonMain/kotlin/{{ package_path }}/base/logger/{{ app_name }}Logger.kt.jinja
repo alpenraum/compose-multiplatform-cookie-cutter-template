@@ -1,0 +1,45 @@
+package {{ package_name }}.base.logger
+
+import co.touchlab.kermit.BaseLogger
+import co.touchlab.kermit.LoggerConfig
+import co.touchlab.kermit.Severity
+import co.touchlab.kermit.loggerConfigInit
+import co.touchlab.kermit.platformLogWriter
+import {{ package_name }}.base.BuildInfo
+import org.koin.core.annotation.Factory
+
+@Factory
+class {{ app_name }}Logger(
+    private val loggerConfig: LoggerConfig =
+        loggerConfigInit(
+            platformLogWriter(),
+            minSeverity = if (BuildInfo.isDebug()) Severity.Verbose else Severity.Error,
+        ),
+    private val tag: String = "",
+) : BaseLogger(loggerConfig) {
+    fun withTag(tag: String): {{ app_name }}Logger = {{ app_name }}Logger(loggerConfig, tag)
+
+    fun v(throwable: Throwable? = null, message: () -> String) = logBlock(Severity.Verbose, tag, throwable, message)
+
+    fun d(throwable: Throwable? = null, message: () -> String) = logBlock(Severity.Debug, tag, throwable, message)
+
+    fun i(throwable: Throwable? = null, message: () -> String) = logBlock(Severity.Info, tag, throwable, message)
+
+    fun w(throwable: Throwable? = null, message: () -> String) = logBlock(Severity.Warn, tag, throwable, message)
+
+    fun e(throwable: Throwable? = null, message: () -> String) = logBlock(Severity.Error, tag, throwable, message)
+
+    fun a(throwable: Throwable? = null, message: () -> String) = logBlock(Severity.Assert, tag, throwable, message)
+
+    fun v(message: String, throwable: Throwable? = null) = log(Severity.Verbose, tag, throwable, message)
+
+    fun d(message: String, throwable: Throwable? = null) = log(Severity.Debug, tag, throwable, message)
+
+    fun i(message: String, throwable: Throwable? = null) = log(Severity.Info, tag, throwable, message)
+
+    fun w(message: String, throwable: Throwable? = null) = log(Severity.Warn, tag, throwable, message)
+
+    fun e(message: String, throwable: Throwable? = null) = log(Severity.Error, tag, throwable, message)
+
+    fun a(message: String, throwable: Throwable? = null) = log(Severity.Assert, tag, throwable, message)
+}

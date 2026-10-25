@@ -1,0 +1,42 @@
+package {{ package_name }}.ui.main
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import {{ package_name }}.ui.base.navigation.DeeplinkManager
+import {{ package_name }}.ui.base.navigation.NavGraphDefinition
+import {{ package_name }}.ui.base.navigation.NavigationTarget
+import org.koin.android.annotation.KoinViewModel
+import org.koin.compose.viewmodel.koinViewModel
+
+@KoinViewModel
+class NavViewModel(
+    val navGraphs: List<NavGraphDefinition>,
+    val deeplinkManager: DeeplinkManager,
+) : ViewModel()
+
+@Composable
+fun {{ app_name }}NavHost(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    viewModel: NavViewModel = koinViewModel(),
+) {
+    NavHost(
+        navController = navController,
+        startDestination = MainRoute.Root,
+        modifier = modifier,
+    ) {
+        viewModel.navGraphs.forEach { it.build(navGraphBuilder = this, navController) }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.deeplinkManager.navigationAction.collect { target ->
+            when (target) {
+                NavigationTarget.HOME -> navController.navigate(MainRoute.Home) { launchSingleTop = true }
+            }
+        }
+    }
+}

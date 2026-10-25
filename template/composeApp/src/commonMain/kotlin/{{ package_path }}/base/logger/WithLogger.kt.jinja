@@ -1,0 +1,7 @@
+package {{ package_name }}.base.logger
+
+abstract class WithLogger(
+    logger: {{ app_name }}Logger,
+) {
+    protected val logger: {{ app_name }}Logger = logger.withTag(this::class.simpleName.orEmpty())
+}

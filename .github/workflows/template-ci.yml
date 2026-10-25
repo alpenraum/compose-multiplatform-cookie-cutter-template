@@ -39,7 +39,7 @@ jobs:
         run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
       - name: Build and test
         working-directory: ${{ runner.temp }}/app
-        run: ./gradlew :composeApp:assembleDebug :composeApp:assembleRelease
+        run: ./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:assembleDebug :composeApp:assembleRelease :composeApp:allTests
 
   ios:
     needs: variants
@@ -60,6 +60,9 @@ jobs:
       - run: pipx install "copier==$COPIER_VERSION"
       - name: Generate
         run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
+      - name: iOS tests
+        working-directory: ${{ runner.temp }}/app
+        run: ./gradlew :composeApp:iosSimulatorArm64Test
       # No shared scheme is committed, hence -target.
       - name: Build Xcode project
         working-directory: ${{ runner.temp }}/app

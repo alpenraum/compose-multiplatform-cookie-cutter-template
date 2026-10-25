@@ -1,0 +1,25 @@
+# {{ app_display_name }}
+
+Compose Multiplatform app for Android{% if include_desktop %}, iOS and desktop (JVM){% else %} and iOS{% endif %}.
+Generated from https://github.com/alpenraum/compose-multiplatform-cookie-cutter-template.
+
+## Modules
+
+- `composeApp` — the app. `commonMain` holds shared code; `androidMain` / `iosMain`{% if include_desktop %} / `desktopMain`{% endif %} hold platform code.
+{%- if include_library_module %}
+- `{{ library_module_name }}` — Kotlin Multiplatform library used by `composeApp`.
+{%- endif %}
+- `iosApp` — Xcode project; iOS entry point only.
+
+## Commands
+
+- Build Android: `./gradlew :composeApp:assembleDebug`
+- Tests: `./gradlew :composeApp:allTests`
+- iOS: open `iosApp/iosApp.xcodeproj` in Xcode (signing team in `iosApp/Configuration/Local.xcconfig`)
+{%- if include_desktop %}
+- Desktop: `./gradlew :composeApp:run`
+{%- endif %}
+
+## Rules
+
+Read `docs/conventions.md` before changing code.

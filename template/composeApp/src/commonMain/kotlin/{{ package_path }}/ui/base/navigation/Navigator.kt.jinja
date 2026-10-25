@@ -1,0 +1,21 @@
+package {{ package_name }}.ui.base.navigation
+
+import androidx.navigation.NavController
+
+interface Navigator {
+    fun navigate(destination: NavDestinationDefinition)
+
+    fun navigateBack()
+}
+
+class NavControllerNavigator(
+    private val navController: NavController,
+) : Navigator {
+    override fun navigate(destination: NavDestinationDefinition) {
+        navController.navigate(destination)
+    }
+
+    override fun navigateBack() {
+        navController.popBackStack()
+    }
+}

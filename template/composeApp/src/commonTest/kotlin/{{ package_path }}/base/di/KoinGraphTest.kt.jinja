@@ -1,0 +1,20 @@
+package {{ package_name }}.base.di
+
+import {{ package_name }}.base.DispatchersProvider
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import {{ package_name }}.ui.main.NavViewModel
+import org.koin.dsl.koinApplication
+import kotlin.test.Test
+import kotlin.test.assertTrue
+
+// KOIN_CONFIG_CHECK is off, so a missing binding only shows up at runtime.
+class KoinGraphTest {
+    @Test
+    fun appModulesResolveCoreBindings() {
+        val koin = koinApplication { modules(koinModules()) }.koin
+
+        koin.get<DispatchersProvider>()
+        koin.get<{{ app_name }}Logger>()
+        assertTrue(koin.get<NavViewModel>().navGraphs.isNotEmpty())
+    }
+}

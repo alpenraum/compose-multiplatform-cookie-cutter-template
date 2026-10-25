@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_unexpected_message">Ein unerwarteter Fehler ist aufgetreten.</string>
+    <string name="error_unexpected_action">Bitte versuche es erneut. Wenn der Fehler bleibt, öffne die Details und sende sie an den Support.</string>
+    <string name="error_show_details">Details anzeigen</string>
+    <string name="error_hide_details">Details ausblenden</string>
+    <string name="action_retry">Erneut versuchen</string>
+</resources>

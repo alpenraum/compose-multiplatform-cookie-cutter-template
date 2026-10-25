@@ -1,0 +1,63 @@
+package {{ package_name }}.base
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavController
+import {{ package_name }}.ui.base.navigation.NavControllerNavigator
+import {{ package_name }}.ui.base.navigation.Navigator
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+
+interface UnidirectionalViewModel<STATE, INTENT, EVENT> {
+    val state: StateFlow<STATE>
+
+    // Back with Channel(BUFFERED).receiveAsFlow() so events emitted while no one collects are kept.
+    val event: Flow<EVENT>
+
+    fun intent(
+        intent: INTENT,
+        navigator: Navigator,
+    )
+}
+
+@Composable
+fun <STATE, INTENT, EVENT> use(
+    viewModel: UnidirectionalViewModel<STATE, INTENT, EVENT>,
+    navController: NavController,
+): StateDispatchEffect<STATE, INTENT, EVENT> {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val navigator = remember(navController) { NavControllerNavigator(navController) }
+
+    return StateDispatchEffect(
+        state = state,
+        eventFlow = viewModel.event,
+        dispatch = { intent -> viewModel.intent(intent, navigator) },
+    )
+}
+
+data class StateDispatchEffect<STATE, INTENT, EVENT>(
+    val state: STATE,
+    val dispatch: (INTENT) -> Unit,
+    val eventFlow: Flow<EVENT>,
+)
+
+@Composable
+fun <EVENT> CollectEvents(
+    events: Flow<EVENT>,
+    onEvent: suspend (EVENT) -> Unit,
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnEvent by rememberUpdatedState(onEvent)
+    LaunchedEffect(events, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            events.collect { currentOnEvent(it) }
+        }
+    }
+}

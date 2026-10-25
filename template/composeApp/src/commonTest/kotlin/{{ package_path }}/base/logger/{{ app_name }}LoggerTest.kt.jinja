@@ -1,0 +1,62 @@
+package {{ package_name }}.base.logger
+
+import co.touchlab.kermit.LogWriter
+import co.touchlab.kermit.Severity
+import co.touchlab.kermit.loggerConfigInit
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class {{ app_name }}LoggerTest {
+    private class CapturingLogWriter : LogWriter() {
+        val entries = mutableListOf<Triple<Severity, String, String>>()
+
+        override fun log(
+            severity: Severity,
+            message: String,
+            tag: String,
+            throwable: Throwable?,
+        ) {
+            entries += Triple(severity, tag, message)
+        }
+    }
+
+    @Test
+    fun everyLevelLogsTheGivenMessageUnderTheOwnersTag() {
+        val writer = CapturingLogWriter()
+        val logger = {{ app_name }}Logger(loggerConfigInit(writer, minSeverity = Severity.Verbose)).withTag("Owner")
+
+        logger.v("v")
+        logger.d("d")
+        logger.i("i")
+        logger.w("w")
+        logger.e("e")
+        logger.a("a")
+        logger.v { "lazy v" }
+        logger.i { "lazy i" }
+
+        assertEquals(
+            listOf(
+                Triple(Severity.Verbose, "Owner", "v"),
+                Triple(Severity.Debug, "Owner", "d"),
+                Triple(Severity.Info, "Owner", "i"),
+                Triple(Severity.Warn, "Owner", "w"),
+                Triple(Severity.Error, "Owner", "e"),
+                Triple(Severity.Assert, "Owner", "a"),
+                Triple(Severity.Verbose, "Owner", "lazy v"),
+                Triple(Severity.Info, "Owner", "lazy i"),
+            ),
+            writer.entries,
+        )
+    }
+
+    @Test
+    fun taggingReturnsACopyAndLeavesTheOriginalUntouched() {
+        val writer = CapturingLogWriter()
+        val original = {{ app_name }}Logger(loggerConfigInit(writer, minSeverity = Severity.Verbose)).withTag("Original")
+
+        original.withTag("Copy").i("copy")
+        original.i("original")
+
+        assertEquals(listOf("Copy", "Original"), writer.entries.map { it.second })
+    }
+}

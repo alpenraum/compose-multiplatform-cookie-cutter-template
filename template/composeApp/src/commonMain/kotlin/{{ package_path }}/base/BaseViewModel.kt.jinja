@@ -1,0 +1,48 @@
+package {{ package_name }}.base
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.error.toAppError
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+abstract class BaseViewModel(
+    protected val dispatchersProvider: DispatchersProvider,
+    logger: {{ app_name }}Logger,
+) : ViewModel(CoroutineScope(dispatchersProvider.main + SupervisorJob())) {
+    protected val logger: {{ app_name }}Logger = logger.withTag(this::class.simpleName.orEmpty())
+
+    // Every failure escaping a launched block lands here, already typed.
+    protected abstract fun onError(error: AppError)
+
+    protected fun launch(block: suspend CoroutineScope.() -> Unit): Job =
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (exception: Exception) {
+                val error = exception.toAppError()
+                logger.e(exception) { "Unhandled failure: $error" }
+                onError(error)
+            }
+        }
+
+    protected fun <T> Flow<T>.inViewModelScope(initialValue: T): StateFlow<T> =
+        stateIn(
+            viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            initialValue = initialValue,
+        )
+
+    private companion object {
+        // Survives a configuration change without restarting upstream flows.
+        const val STOP_TIMEOUT_MS = 5_000L
+    }
+}

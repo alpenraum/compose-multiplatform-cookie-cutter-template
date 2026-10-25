@@ -1,0 +1,32 @@
+package {{ package_name }}.base.error
+
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertSame
+
+class AppErrorTest {
+    @Test
+    fun appExceptionKeepsTheErrorItCarries() {
+        val error = AppError.Unexpected(RuntimeException())
+
+        assertSame(error, AppException(error).toAppError())
+    }
+
+    @Test
+    fun unknownExceptionBecomesUnexpectedKeepingItsCause() {
+        val cause = IllegalStateException("token=secret")
+        val error = cause.toAppError()
+
+        assertIs<AppError.Unexpected>(error)
+        assertSame(cause, error.cause)
+        assertFalse("secret" in error.technicalDetail)
+    }
+
+    @Test
+    fun cancellationIsRethrownInsteadOfConverted() {
+        assertFailsWith<CancellationException> { CancellationException("cancelled").toAppError() }
+    }
+}

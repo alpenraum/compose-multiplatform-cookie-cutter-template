@@ -1,0 +1,5 @@
+# Project-specific R8 keep rules.
+
+# Log tags come from the owning class name.
+-keepnames class * extends {{ package_name }}.base.BaseViewModel
+-keepnames class * extends {{ package_name }}.base.logger.WithLogger

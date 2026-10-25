@@ -1,0 +1,11 @@
+package {{ package_name }}.ui.base.navigation
+
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+
+interface NavGraphDefinition {
+    fun build(
+        navGraphBuilder: NavGraphBuilder,
+        navController: NavController,
+    )
+}
