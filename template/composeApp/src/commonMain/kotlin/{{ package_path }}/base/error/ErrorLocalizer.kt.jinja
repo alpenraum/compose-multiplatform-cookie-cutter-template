@@ -1,6 +1,22 @@
 package {{ package_name }}.base.error
 
 import {{ package_name }}.resources.Res
+{%- if include_networking %}
+import {{ package_name }}.resources.error_http_busy_message
+import {{ package_name }}.resources.error_http_forbidden_message
+import {{ package_name }}.resources.error_http_rejected_message
+import {{ package_name }}.resources.error_http_server_message
+import {{ package_name }}.resources.error_http_session_message
+import {{ package_name }}.resources.error_invalid_response_message
+import {{ package_name }}.resources.error_network_action_retry_later
+import {{ package_name }}.resources.error_network_action_retry_now
+import {{ package_name }}.resources.error_network_action_sign_in
+import {{ package_name }}.resources.error_network_action_support
+import {{ package_name }}.resources.error_network_action_update
+import {{ package_name }}.resources.error_timeout_message
+import {{ package_name }}.resources.error_unreachable_action
+import {{ package_name }}.resources.error_unreachable_message
+{%- endif %}
 {%- if include_persistence %}
 import {{ package_name }}.resources.error_storage_action
 import {{ package_name }}.resources.error_storage_message
@@ -11,16 +27,33 @@ import org.jetbrains.compose.resources.StringResource
 
 data class ErrorText(
     val message: StringResource,
-    val messageArgs: List<Any> = emptyList(),
     val action: StringResource? = null,
 )
 
 object ErrorLocalizer {
     fun localize(error: AppError): ErrorText =
         when (error) {
-            is AppError.Unexpected -> ErrorText(Res.string.error_unexpected_message, action = Res.string.error_unexpected_action)
+            is AppError.Unexpected -> ErrorText(Res.string.error_unexpected_message, Res.string.error_unexpected_action)
 {%- if include_persistence %}
-            is AppError.Storage -> ErrorText(Res.string.error_storage_message, action = Res.string.error_storage_action)
+            is AppError.Storage -> ErrorText(Res.string.error_storage_message, Res.string.error_storage_action)
+{%- endif %}
+{%- if include_networking %}
+            is AppError.Network.Unreachable -> ErrorText(Res.string.error_unreachable_message, Res.string.error_unreachable_action)
+            is AppError.Network.Timeout -> ErrorText(Res.string.error_timeout_message, Res.string.error_network_action_retry_now)
+            is AppError.Network.Http -> localizeHttp(error.status)
+            is AppError.Network.InvalidResponse -> ErrorText(Res.string.error_invalid_response_message, Res.string.error_network_action_update)
 {%- endif %}
         }
+{%- if include_networking %}
+
+    // The status itself is in the technical detail; the message says what it means for the user.
+    private fun localizeHttp(status: Int): ErrorText =
+        when (status) {
+            401 -> ErrorText(Res.string.error_http_session_message, Res.string.error_network_action_sign_in)
+            403 -> ErrorText(Res.string.error_http_forbidden_message, Res.string.error_network_action_support)
+            408, 429 -> ErrorText(Res.string.error_http_busy_message, Res.string.error_network_action_retry_later)
+            in 500..599 -> ErrorText(Res.string.error_http_server_message, Res.string.error_network_action_retry_later)
+            else -> ErrorText(Res.string.error_http_rejected_message, Res.string.error_network_action_support)
+        }
+{%- endif %}
 }

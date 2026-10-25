@@ -15,6 +15,9 @@ _exclude:
   - "{% if not include_persistence %}composeApp/src/*/kotlin/**/data/db{% endif %}"
   - "{% if not include_persistence %}composeApp/src/*/kotlin/**/RoomSampleRepository*.kt{% endif %}"
   - "{% if not include_persistence %}composeApp/db-schemas{% endif %}"
+  - "{% if not include_networking %}composeApp/src/*/kotlin/**/base/network{% endif %}"
+  - "{% if not include_networking %}composeApp/src/*/kotlin/**/data/remote{% endif %}"
+  - "{% if not include_networking %}composeApp/src/*/kotlin/**/ErrorLocalizerTest.kt{% endif %}"
   - "{% if include_persistence %}composeApp/src/*/kotlin/**/InMemorySampleRepository.kt{% endif %}"
 
 _message_after_copy: |

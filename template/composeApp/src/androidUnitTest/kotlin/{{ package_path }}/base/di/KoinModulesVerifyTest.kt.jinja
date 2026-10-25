@@ -1,6 +1,10 @@
 package {{ package_name }}.base.di
 
 import android.content.Context
+{%- if include_networking %}
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.engine.HttpClientEngine
+{%- endif %}
 import org.koin.dsl.module
 import org.koin.test.verify.verify
 import kotlin.test.Test
@@ -10,7 +14,17 @@ class KoinModulesVerifyTest {
     @Test
     fun everyDefinitionHasItsDependencies() {
         module { includes(koinModules()) }.verify(
-            extraTypes = listOf(Context::class, Long::class, List::class),
+            // Supplied by the platform or by navigation arguments{% if include_networking %}; HttpClient's own constructor types are listed because verify() reads it although a provider function builds the client{% endif %}.
+            extraTypes =
+                listOf(
+                    Context::class,
+                    Long::class,
+                    List::class,
+{%- if include_networking %}
+                    HttpClientEngine::class,
+                    HttpClientConfig::class,
+{%- endif %}
+                ),
         )
     }
 }

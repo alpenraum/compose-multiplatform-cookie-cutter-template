@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+{% if include_networking %}import com.codingfeline.buildkonfig.compiler.FieldSpec
+{% endif %}import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 {%- if include_persistence %}
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 {%- endif %}
@@ -15,6 +16,9 @@ plugins {
     alias(libs.plugins.mokkery)
 {%- if include_persistence %}
     alias(libs.plugins.room)
+{%- endif %}
+{%- if include_networking %}
+    alias(libs.plugins.buildKonfig)
 {%- endif %}
 }
 
@@ -66,6 +70,13 @@ kotlin {
 
                 implementation(libs.kermit)
                 implementation(libs.kotlinx.serialization.json)
+{%- if include_networking %}
+
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.client.logging)
+                implementation(libs.ktor.serialization.kotlinx.json)
+{%- endif %}
 {%- if include_persistence %}
 
                 implementation(libs.room.runtime)
@@ -77,6 +88,9 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+{%- if include_networking %}
+            implementation(libs.ktor.client.mock)
+{%- endif %}
         }
 
         androidUnitTest.dependencies {
@@ -87,7 +101,16 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
+{%- if include_networking %}
+            implementation(libs.ktor.client.okhttp)
+{%- endif %}
         }
+{%- if include_networking %}
+
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
+{%- endif %}
     }
 }
 
@@ -120,6 +143,20 @@ ksp {
     arg("KOIN_CONFIG_CHECK", "false")
 }
 
+{% if include_networking -%}
+buildkonfig {
+    packageName = "{{ package_name }}"
+
+    // Select with -Pbuildkonfig.flavor=dev; no flavor = production.
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "baseUrl", "https://api.example.invalid/")
+    }
+    defaultConfigs("dev") {
+        buildConfigField(FieldSpec.Type.STRING, "baseUrl", "https://dev.api.example.invalid/")
+    }
+}
+
+{% endif -%}
 compose.resources {
     packageOfResClass = "{{ package_name }}.resources"
 }

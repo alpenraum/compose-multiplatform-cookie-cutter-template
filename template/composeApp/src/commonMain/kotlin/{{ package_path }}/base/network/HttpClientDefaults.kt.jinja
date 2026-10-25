@@ -1,0 +1,62 @@
+package {{ package_name }}.base.network
+
+import {{ package_name }}.base.BuildInfo
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.network.sockets.SocketTimeoutException
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.userAgent
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.io.IOException
+import kotlinx.serialization.json.Json
+
+// Only safe methods: a retried PUT/DELETE/POST whose first response was lost has side effects.
+private val RETRYABLE_METHODS = setOf(HttpMethod.Get, HttpMethod.Head, HttpMethod.Options)
+private val RETRYABLE_STATUSES = setOf(429, 502, 503, 504)
+
+fun Throwable.isTimeout(): Boolean = this is HttpRequestTimeoutException || this is SocketTimeoutException || this is ConnectTimeoutException
+
+fun HttpClientConfig<*>.installDefaults(
+    baseUrl: String,
+    httpLogger: Logger,
+) {
+    expectSuccess = false
+
+    // Installed before HttpTimeout so the timeout wraps each attempt, not the whole retry ladder.
+    install(HttpRequestRetry) {
+        maxRetries = 2
+        retryIf { request, response -> request.method in RETRYABLE_METHODS && response.status.value in RETRYABLE_STATUSES }
+        // A timed-out attempt is not retried: it would only spend the user's patience again.
+        retryOnExceptionIf { request, cause -> request.method in RETRYABLE_METHODS && cause is IOException && !cause.isTimeout() }
+        exponentialDelay(baseDelayMs = 500)
+    }
+    install(HttpTimeout) {
+        connectTimeoutMillis = 10_000
+        socketTimeoutMillis = 15_000
+        requestTimeoutMillis = 30_000
+    }
+    install(ContentNegotiation) {
+        json(Json { ignoreUnknownKeys = true })
+    }
+    if (BuildInfo.isDebug()) {
+        install(Logging) {
+            logger = httpLogger
+            // Headers only: bodies may carry personal data.
+            level = LogLevel.HEADERS
+            sanitizeHeader { it == HttpHeaders.Authorization || it == HttpHeaders.Cookie || it == HttpHeaders.SetCookie }
+        }
+    }
+    defaultRequest {
+        url(baseUrl)
+        userAgent("{{ app_name }}/${BuildInfo.appVersion()} (${BuildInfo.osName()} ${BuildInfo.osVersion()})")
+    }
+}

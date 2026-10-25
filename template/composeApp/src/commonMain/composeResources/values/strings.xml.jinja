@@ -6,6 +6,22 @@
     <string name="error_storage_message">Your data could not be read or saved.</string>
     <string name="error_storage_action">Restart the app. If it keeps happening, make sure your device has free storage.</string>
 {%- endif %}
+{%- if include_networking %}
+    <string name="error_unreachable_message">Cannot reach the server.</string>
+    <string name="error_unreachable_action">Check your internet connection and try again.</string>
+    <string name="error_timeout_message">The server took too long to respond.</string>
+    <string name="error_http_session_message">You are not signed in, or your session has expired.</string>
+    <string name="error_http_forbidden_message">You are not allowed to do this.</string>
+    <string name="error_http_busy_message">The server is busy right now.</string>
+    <string name="error_http_server_message">The server has a problem right now.</string>
+    <string name="error_http_rejected_message">The server rejected the request.</string>
+    <string name="error_invalid_response_message">The server sent a response this app version cannot read.</string>
+    <string name="error_network_action_retry_now">Try again in a moment.</string>
+    <string name="error_network_action_retry_later">Try again later.</string>
+    <string name="error_network_action_sign_in">Sign in again.</string>
+    <string name="error_network_action_support">If you think this is wrong, open the details and send them to support.</string>
+    <string name="error_network_action_update">Update the app. If it keeps happening, contact support.</string>
+{%- endif %}
     <string name="error_show_details">Show details</string>
     <string name="error_hide_details">Hide details</string>
     <string name="action_retry">Retry</string>

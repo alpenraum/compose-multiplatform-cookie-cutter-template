@@ -1,0 +1,6 @@
+package {{ package_name }}.base.network
+
+import io.ktor.client.engine.HttpClientEngineFactory
+
+// One actual per target: a target without an engine fails to compile instead of failing at runtime.
+expect val httpClientEngine: HttpClientEngineFactory<*>

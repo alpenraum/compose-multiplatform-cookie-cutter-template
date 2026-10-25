@@ -19,6 +19,37 @@ sealed interface AppError {
         override val technicalDetail: String = "storage: $operation"
     }
 {%- endif %}
+{%- if include_networking %}
+
+    sealed interface Network : AppError {
+        val endpoint: String
+
+        data class Unreachable(
+            override val endpoint: String,
+        ) : Network {
+            override val technicalDetail: String = "network: unreachable $endpoint"
+        }
+
+        data class Timeout(
+            override val endpoint: String,
+        ) : Network {
+            override val technicalDetail: String = "network: timeout $endpoint"
+        }
+
+        data class Http(
+            override val endpoint: String,
+            val status: Int,
+        ) : Network {
+            override val technicalDetail: String = "network: http $status $endpoint"
+        }
+
+        data class InvalidResponse(
+            override val endpoint: String,
+        ) : Network {
+            override val technicalDetail: String = "network: invalid response $endpoint"
+        }
+    }
+{%- endif %}
 }
 
 class AppException(

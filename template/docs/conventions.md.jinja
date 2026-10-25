@@ -41,6 +41,15 @@ replace it — contradictions are bugs.
 - Never "Something went wrong": every message says what happened and, where possible, what the user can do.
 - No empty catch and no catch-log-continue without an explicit decision about the failed operation. `CancellationException` is always rethrown.
 
+{%- if include_networking %}
+## Networking
+
+- Every HTTP call goes through `apiCall("<METHOD> <path template>") { httpClient.<method>("relative/path") }`; the label is a template ("GET /items/{id}") because it is shown to users — no ids, no query values.
+- Paths are relative (no leading `/`) so they resolve against the BuildKonfig base URL.
+- Wire types (`*Dto`, `@Serializable`) live in `data/remote` and are mapped to domain types before leaving the data layer.
+- Only GET/HEAD/OPTIONS are retried automatically; a call that must retry a write decides that explicitly.
+
+{% endif -%}
 ## Dependency injection
 
 - Classes are registered with Koin annotations (`@Single`, `@Factory`, `@KoinViewModel`) in `commonMain`; only platform objects go into the `platformModule()` DSL.

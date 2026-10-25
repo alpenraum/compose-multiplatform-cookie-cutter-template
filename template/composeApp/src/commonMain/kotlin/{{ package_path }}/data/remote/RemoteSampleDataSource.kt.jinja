@@ -1,0 +1,16 @@
+package {{ package_name }}.data.remote
+
+import {{ package_name }}.base.network.apiCall
+import {{ package_name }}.data.repository.model.SampleItem
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import org.koin.core.annotation.Single
+
+// Example of a network call; wire it into a SampleRepository once a real backend exists.
+@Single
+class RemoteSampleDataSource(
+    private val httpClient: HttpClient,
+) {
+    // Relative path: resolved against the base URL from BuildKonfig.
+    suspend fun fetchItems(): List<SampleItem> = apiCall<List<SampleItemDto>>("GET /items") { httpClient.get("items") }.map { it.toDomain() }
+}

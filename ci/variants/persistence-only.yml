@@ -1,0 +1,2 @@
+include_persistence: true
+include_networking: false

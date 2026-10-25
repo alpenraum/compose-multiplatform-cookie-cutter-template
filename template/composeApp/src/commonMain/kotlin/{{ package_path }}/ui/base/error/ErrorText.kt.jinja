@@ -13,9 +13,9 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun ErrorText.messageText(): String = stringResource(message, *messageArgs.toTypedArray())
+fun ErrorText.messageText(): String = stringResource(message)
 
-suspend fun ErrorText.resolveMessage(): String = getString(message, *messageArgs.toTypedArray())
+suspend fun ErrorText.resolveMessage(): String = getString(message)
 
 // Command failures: message + action as a snackbar; returns true when the user asked for the details.
 suspend fun SnackbarHostState.showError(error: AppError): Boolean {

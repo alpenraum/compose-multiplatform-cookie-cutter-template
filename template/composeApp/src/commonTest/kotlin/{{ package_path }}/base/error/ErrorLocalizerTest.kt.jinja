@@ -1,0 +1,38 @@
+package {{ package_name }}.base.error
+
+import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.error_http_busy_message
+import {{ package_name }}.resources.error_http_forbidden_message
+import {{ package_name }}.resources.error_http_rejected_message
+import {{ package_name }}.resources.error_http_server_message
+import {{ package_name }}.resources.error_http_session_message
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class ErrorLocalizerTest {
+    private fun messageFor(status: Int) = ErrorLocalizer.localize(AppError.Network.Http("GET /items", status)).message
+
+    @Test
+    fun unauthenticatedAndForbiddenAreToldApart() {
+        assertEquals(Res.string.error_http_session_message, messageFor(401))
+        assertEquals(Res.string.error_http_forbidden_message, messageFor(403))
+    }
+
+    @Test
+    fun transientClientStatusesAreReportedAsBusy() {
+        assertEquals(Res.string.error_http_busy_message, messageFor(408))
+        assertEquals(Res.string.error_http_busy_message, messageFor(429))
+    }
+
+    @Test
+    fun serverErrorsAreReportedAsServerProblems() {
+        assertEquals(Res.string.error_http_server_message, messageFor(500))
+        assertEquals(Res.string.error_http_server_message, messageFor(599))
+    }
+
+    @Test
+    fun otherClientErrorsAreReportedAsRejected() {
+        assertEquals(Res.string.error_http_rejected_message, messageFor(404))
+        assertEquals(Res.string.error_http_rejected_message, messageFor(422))
+    }
+}

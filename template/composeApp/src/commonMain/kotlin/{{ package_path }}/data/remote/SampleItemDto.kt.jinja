@@ -1,0 +1,13 @@
+package {{ package_name }}.data.remote
+
+import {{ package_name }}.data.repository.model.SampleItem
+import kotlinx.serialization.Serializable
+
+// Wire type: stays in data/remote; repositories hand out SampleItem.
+@Serializable
+data class SampleItemDto(
+    val id: Long,
+    val title: String,
+) {
+    fun toDomain() = SampleItem(id = id, title = title)
+}

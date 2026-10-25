@@ -4,12 +4,20 @@ import {{ package_name }}.base.DispatchersProvider
 import {{ package_name }}.base.logger.{{ app_name }}Logger
 {%- if include_persistence %}
 import {{ package_name }}.data.db.SampleItemDao
+{%- endif %}
+{%- if include_networking %}
+import {{ package_name }}.data.remote.RemoteSampleDataSource
+{%- endif %}
+{%- if include_persistence %}
 import {{ package_name }}.data.repository.SampleRepository
 {%- endif %}
 import {{ package_name }}.ui.main.NavViewModel
 import {{ package_name }}.usecase.sample.AddSampleItemUseCase
 {%- if include_persistence %}
 import dev.mokkery.mock
+{%- endif %}
+{%- if include_networking %}
+import io.ktor.client.HttpClient
 {%- endif %}
 import org.koin.dsl.koinApplication
 {%- if include_persistence %}
@@ -35,6 +43,10 @@ class KoinGraphTest {
         koin.get<AddSampleItemUseCase>()
 {%- if include_persistence %}
         koin.get<SampleRepository>()
+{%- endif %}
+{%- if include_networking %}
+        koin.get<RemoteSampleDataSource>()
+        koin.get<HttpClient>().close()
 {%- endif %}
         assertTrue(koin.get<NavViewModel>().navGraphs.isNotEmpty())
     }

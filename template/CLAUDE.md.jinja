@@ -15,6 +15,9 @@ Generated from https://github.com/alpenraum/compose-multiplatform-cookie-cutter-
 
 - Build Android: `./gradlew :composeApp:assembleDebug`
 - Tests: `./gradlew :composeApp:allTests`
+{%- if include_networking %}
+- Dev backend: add `-Pbuildkonfig.flavor=dev` (base URLs in `composeApp/build.gradle.kts`, `buildkonfig { }`)
+{%- endif %}
 - iOS: open `iosApp/iosApp.xcodeproj` in Xcode (signing team in `iosApp/Configuration/Local.xcconfig`)
 {%- if include_desktop %}
 - Desktop: `./gradlew :composeApp:run`

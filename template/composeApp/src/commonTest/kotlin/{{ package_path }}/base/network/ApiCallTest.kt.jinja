@@ -1,0 +1,181 @@
+package {{ package_name }}.base.network
+
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.error.AppException
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockRequestHandler
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.network.sockets.SocketTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
+import kotlinx.serialization.Serializable
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+
+class ApiCallTest {
+    @Serializable
+    private data class Item(
+        val title: String,
+    )
+
+    private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
+    private var attempts = 0
+
+    private fun client(handler: MockRequestHandler) =
+        HttpClient(
+            MockEngine { request ->
+                attempts++
+                handler(request)
+            },
+        ) {
+            installDefaults(
+                baseUrl = "https://api.example.invalid/",
+                httpLogger =
+                    object : Logger {
+                        override fun log(message: String) = Unit
+                    },
+            )
+        }
+
+    private suspend inline fun failureOf(noinline block: suspend () -> Unit): AppError = assertFailsWith<AppException> { block() }.error
+
+    @Test
+    fun relativePathIsResolvedAgainstTheBaseUrlAndDecoded() =
+        runTest {
+            var requestedUrl = ""
+            val client =
+                client { request ->
+                    requestedUrl = request.url.toString()
+                    respond("""{"title":"Milk","extra":1}""", HttpStatusCode.OK, jsonHeaders)
+                }
+
+            val item = apiCall<Item>("GET /items/{id}") { client.get("items/1") }
+
+            assertEquals(Item("Milk"), item)
+            assertEquals("https://api.example.invalid/items/1", requestedUrl)
+        }
+
+    @Test
+    fun errorStatusBecomesHttpErrorWithStatus() =
+        runTest {
+            val client = client { respond("", HttpStatusCode.NotFound) }
+
+            val error = failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(AppError.Network.Http("GET /items/{id}", 404), error)
+        }
+
+    @Test
+    fun connectionFailureBecomesUnreachableAndPostIsNotRetried() =
+        runTest {
+            val client = client { throw IOException("no route to host") }
+
+            val error = failureOf { apiCall<Item>("POST /items") { client.post("items") } }
+
+            assertEquals(AppError.Network.Unreachable("POST /items"), error)
+            assertEquals(1, attempts)
+        }
+
+    @Test
+    fun getIsRetriedAfterConnectionFailure() =
+        runTest {
+            val client = client { if (attempts == 1) throw IOException("reset") else respond("""{"title":"Milk"}""", HttpStatusCode.OK, jsonHeaders) }
+
+            assertEquals(Item("Milk"), apiCall<Item>("GET /items/{id}") { client.get("items/1") })
+            assertEquals(2, attempts)
+        }
+
+    @Test
+    fun requestTimeoutBecomesTimeoutWithoutRetry() =
+        runTest {
+            val client = client { throw HttpRequestTimeoutException("items/1", 30_000) }
+
+            val error = failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(AppError.Network.Timeout("GET /items/{id}"), error)
+            assertEquals(1, attempts)
+        }
+
+    @Test
+    fun socketTimeoutFromSlowServerBecomesTimeoutWithoutRetry() =
+        runTest {
+            val client = client { throw SocketTimeoutException("read timed out") }
+
+            val error = failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(AppError.Network.Timeout("GET /items/{id}"), error)
+            assertEquals(1, attempts)
+        }
+
+    @Test
+    fun connectTimeoutBecomesUnreachable() =
+        runTest {
+            val client = client { throw ConnectTimeoutException("connect timed out") }
+
+            val error = failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(AppError.Network.Unreachable("GET /items/{id}"), error)
+        }
+
+    @Test
+    fun undecodableJsonBecomesInvalidResponse() =
+        runTest {
+            val client = client { respond("""{"unexpected":true}""", HttpStatusCode.OK, jsonHeaders) }
+
+            val error = failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(AppError.Network.InvalidResponse("GET /items/{id}"), error)
+        }
+
+    @Test
+    fun htmlPageInsteadOfJsonBecomesUnreachable() =
+        runTest {
+            val client = client { respond("<html>Sign in to Wi-Fi</html>", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/html")) }
+
+            val error = failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(AppError.Network.Unreachable("GET /items/{id}"), error)
+        }
+
+    @Test
+    fun postIsNotRetriedAfterServerError() =
+        runTest {
+            val client = client { respond("", HttpStatusCode.ServiceUnavailable) }
+
+            failureOf { apiCall<Item>("POST /items") { client.post("items") } }
+
+            assertEquals(1, attempts)
+        }
+
+    @Test
+    fun getIsRetriedAfterTransientServerError() =
+        runTest {
+            val client =
+                client {
+                    if (attempts == 1) respond("", HttpStatusCode.ServiceUnavailable) else respond("""{"title":"Milk"}""", HttpStatusCode.OK, jsonHeaders)
+                }
+
+            assertEquals(Item("Milk"), apiCall<Item>("GET /items/{id}") { client.get("items/1") })
+            assertEquals(2, attempts)
+        }
+
+    @Test
+    fun getIsNotRetriedAfterPermanentServerError() =
+        runTest {
+            val client = client { respond("", HttpStatusCode.NotImplemented) }
+
+            failureOf { apiCall<Item>("GET /items/{id}") { client.get("items/1") } }
+
+            assertEquals(1, attempts)
+        }
+}

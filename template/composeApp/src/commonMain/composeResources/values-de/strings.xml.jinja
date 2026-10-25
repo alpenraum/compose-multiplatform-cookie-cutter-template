@@ -6,6 +6,22 @@
     <string name="error_storage_message">Deine Daten konnten nicht gelesen oder gespeichert werden.</string>
     <string name="error_storage_action">Starte die App neu. Wenn der Fehler bleibt, sorge für freien Speicherplatz auf dem Gerät.</string>
 {%- endif %}
+{%- if include_networking %}
+    <string name="error_unreachable_message">Der Server ist nicht erreichbar.</string>
+    <string name="error_unreachable_action">Prüfe deine Internetverbindung und versuche es erneut.</string>
+    <string name="error_timeout_message">Der Server hat zu lange nicht geantwortet.</string>
+    <string name="error_http_session_message">Du bist nicht angemeldet oder deine Sitzung ist abgelaufen.</string>
+    <string name="error_http_forbidden_message">Dafür fehlt dir die Berechtigung.</string>
+    <string name="error_http_busy_message">Der Server ist gerade ausgelastet.</string>
+    <string name="error_http_server_message">Der Server hat gerade ein Problem.</string>
+    <string name="error_http_rejected_message">Der Server hat die Anfrage abgelehnt.</string>
+    <string name="error_invalid_response_message">Der Server hat eine Antwort gesendet, die diese App-Version nicht lesen kann.</string>
+    <string name="error_network_action_retry_now">Versuche es gleich noch einmal.</string>
+    <string name="error_network_action_retry_later">Versuche es später noch einmal.</string>
+    <string name="error_network_action_sign_in">Melde dich erneut an.</string>
+    <string name="error_network_action_support">Wenn du das für einen Fehler hältst, öffne die Details und sende sie an den Support.</string>
+    <string name="error_network_action_update">Aktualisiere die App. Wenn der Fehler bleibt, wende dich an den Support.</string>
+{%- endif %}
     <string name="error_show_details">Details anzeigen</string>
     <string name="error_hide_details">Details ausblenden</string>
     <string name="action_retry">Erneut versuchen</string>

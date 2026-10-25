@@ -1,0 +1,46 @@
+package {{ package_name }}.base.network
+
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.error.AppException
+import io.ktor.client.call.NoTransformationFoundException
+import io.ktor.client.call.body
+import io.ktor.client.network.sockets.SocketTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.isSuccess
+import io.ktor.serialization.ContentConvertException
+import kotlinx.io.IOException
+import kotlinx.serialization.SerializationException
+
+/**
+ * The HTTP boundary: Ktor failures leave the network layer only as [AppError.Network].
+ * [endpoint] is a path template such as "GET /items/{id}" — it is shown to users, so never put ids or query values in it.
+ */
+suspend inline fun <reified T> apiCall(
+    endpoint: String,
+    request: () -> HttpResponse,
+): T {
+    val response =
+        try {
+            request()
+        } catch (exception: HttpRequestTimeoutException) {
+            throw AppException(AppError.Network.Timeout(endpoint), exception)
+        } catch (exception: SocketTimeoutException) {
+            throw AppException(AppError.Network.Timeout(endpoint), exception)
+        } catch (exception: IOException) {
+            throw AppException(AppError.Network.Unreachable(endpoint), exception)
+        }
+    if (!response.status.isSuccess()) {
+        throw AppException(AppError.Network.Http(endpoint, response.status.value))
+    }
+    return try {
+        response.body<T>()
+    } catch (exception: ContentConvertException) {
+        throw AppException(AppError.Network.InvalidResponse(endpoint), exception)
+    } catch (exception: SerializationException) {
+        throw AppException(AppError.Network.InvalidResponse(endpoint), exception)
+    } catch (exception: NoTransformationFoundException) {
+        // A 2xx that is not JSON at all is typically a captive portal or proxy page, not our server.
+        throw AppException(AppError.Network.Unreachable(endpoint), exception)
+    }
+}

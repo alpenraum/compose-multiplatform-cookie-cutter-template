@@ -1,0 +1,14 @@
+package {{ package_name }}.base.network
+
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import {{ package_name }}.base.logger.WithLogger
+import io.ktor.client.plugins.logging.Logger
+import org.koin.core.annotation.Factory
+
+@Factory
+class HttpLogger(
+    logger: {{ app_name }}Logger,
+) : WithLogger(logger),
+    Logger {
+    override fun log(message: String) = logger.d(message)
+}

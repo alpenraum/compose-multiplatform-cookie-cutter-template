@@ -1,0 +1,12 @@
+package {{ package_name }}.base.network
+
+import {{ package_name }}.BuildKonfig
+import io.ktor.client.HttpClient
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Single
+
+@Module
+class NetworkModule {
+    @Single
+    fun httpClient(httpLogger: HttpLogger): HttpClient = HttpClient(httpClientEngine) { installDefaults(BuildKonfig.baseUrl, httpLogger) }
+}
