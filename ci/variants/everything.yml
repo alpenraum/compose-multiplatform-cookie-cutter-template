@@ -1,0 +1,4 @@
+include_persistence: true
+include_networking: true
+include_bottom_nav: true
+include_desktop: true

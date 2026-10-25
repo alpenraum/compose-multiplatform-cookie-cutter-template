@@ -1,0 +1,13 @@
+package {{ package_name }}
+
+import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.test.Test
+
+class DesktopRuntimeTest {
+    // Every ViewModel needs Main; on the JVM it only exists with kotlinx-coroutines-swing on the classpath.
+    @Test
+    fun mainDispatcherIsAvailable() {
+        Dispatchers.Main.isDispatchNeeded(EmptyCoroutineContext)
+    }
+}

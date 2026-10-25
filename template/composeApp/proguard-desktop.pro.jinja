@@ -1,0 +1,37 @@
+# Desktop release builds (packageRelease*) run ProGuard with these rules.
+{%- if include_persistence %}
+
+# Room finds the generated AppDatabase_Impl by reflection on the JVM; the bundled SQLite driver is JNI.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keepclasseswithmembers class androidx.sqlite.driver.bundled.** { native <methods>; }
+{%- endif %}
+{%- if include_networking %}
+
+# Loaded through ServiceLoader, so ProGuard sees no reference to them.
+-keep class * implements io.ktor.serialization.kotlinx.KotlinxSerializationExtensionProvider { <init>(); }
+-keep class * implements org.slf4j.spi.SLF4JServiceProvider { <init>(); }
+# ProGuard's optimisation produces invalid okio bytecode (VerifyError on the first request).
+-keep class okio.** { *; }
+
+# OkHttp's optional TLS providers and GraalVM hooks are not on the classpath.
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+-dontwarn org.graalvm.**
+-dontwarn com.oracle.svm.**
+{%- endif %}
+{%- if include_bottom_nav %}
+
+# Referenced by material3-adaptive metadata, absent from the Kotlin stdlib on the classpath.
+-dontwarn kotlin.Deprecated$Container
+{%- endif %}
+
+# kotlinx.serialization (navigation routes{% if include_networking %}, DTOs{% endif %}).
+-keepattributes *Annotation*, InnerClasses
+-keepclassmembers class **$$serializer { *; }
+-keepclasseswithmembers class * {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclassmembers class * {
+    *** Companion;
+}

@@ -1,0 +1,33 @@
+package {{ package_name }}.base
+
+import java.io.File
+
+// Version properties are set by composeApp/build.gradle.kts for every launcher; app.debug only for the dev run tasks.
+actual object BuildInfo {
+    actual fun isDebug() = System.getProperty("app.debug").toBoolean()
+
+    actual fun osName(): String = System.getProperty("os.name")
+
+    actual fun osVersion(): String = System.getProperty("os.version")
+
+    actual fun appVersion(): String = System.getProperty("app.versionName").orEmpty()
+
+    actual fun appBuild(): String = System.getProperty("app.versionCode").orEmpty()
+
+    // Per-OS user data directory; debug runs get their own so a dev schema never meets an installed build.
+    fun appDataDirectory(): File {
+        val os = osName().lowercase()
+        val home = System.getProperty("user.home")
+        val base =
+            when {
+                os.contains("mac") -> File(home, "Library/Application Support")
+                os.contains("win") -> absoluteDirectory("APPDATA") ?: File(home, "AppData/Roaming")
+                else -> absoluteDirectory("XDG_DATA_HOME") ?: File(home, ".local/share")
+            }
+        val name = if (isDebug()) "{{ package_name }}.dev" else "{{ package_name }}"
+        return File(base, name).apply { check(mkdirs() || isDirectory) { "Cannot create app data directory $this" } }
+    }
+
+    // Empty or relative values count as unset (XDG Base Directory spec).
+    private fun absoluteDirectory(variable: String): File? = System.getenv(variable)?.let(::File)?.takeIf { it.isAbsolute }
+}

@@ -20,11 +20,16 @@ ktor = "3.3.2"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerializationJson = "1.9.0"
 {%- if include_bottom_nav %}
+# The version material3-adaptive-navigation-suite 1.9.0 (Compose 1.9.3) requires.
+material3Adaptive = "1.1.2"
 # Material icons are frozen at 1.7.3 upstream.
 materialIcons = "1.7.3"
 {%- endif %}
 ksp = "2.3.3"
 mokkery = "3.0.0"
+{%- if include_desktop and include_networking %}
+slf4j = "2.0.17"
+{%- endif %}
 {%- if include_persistence %}
 room = "2.8.3"
 sqlite = "2.6.1"
@@ -49,6 +54,9 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+{%- if include_desktop %}
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
+{%- endif %}
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
@@ -63,7 +71,12 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 {%- endif %}
 
 {%- if include_bottom_nav %}
+material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "material3Adaptive" }
 material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "materialIcons" }
+{%- endif %}
+
+{%- if include_desktop and include_networking %}
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 {%- endif %}
 
 [plugins]

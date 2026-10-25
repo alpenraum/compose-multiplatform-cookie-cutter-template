@@ -39,7 +39,11 @@ jobs:
         run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
       - name: Build and test
         working-directory: ${{ runner.temp }}/app
-        run: ./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:assembleDebug :composeApp:assembleRelease :composeApp:allTests
+        # Not allTests: on Linux it would compile the iOS test sources, and KSP skips iOS on non-macOS hosts.
+        run: ./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:assembleDebug :composeApp:assembleRelease :composeApp:testDebugUnitTest
+      - name: Desktop tests and release package
+        working-directory: ${{ runner.temp }}/app
+        run: if [ -d composeApp/src/desktopMain ]; then ./gradlew :composeApp:desktopTest :composeApp:packageReleaseUberJarForCurrentOS; fi
 
   ios:
     needs: variants
@@ -94,4 +98,4 @@ jobs:
           copier update --defaults --vcs-ref HEAD
           if grep -rIl --exclude-dir=.git '^<<<<<<< ' . ; then echo "conflict markers"; exit 1; fi
           if find . -name '*.rej' | grep -q . ; then echo "rejected hunks"; exit 1; fi
-          ./gradlew :composeApp:assembleDebug :composeApp:allTests
+          ./gradlew :composeApp:assembleDebug :composeApp:testDebugUnitTest

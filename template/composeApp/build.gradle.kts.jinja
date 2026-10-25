@@ -1,10 +1,15 @@
 {% if include_networking %}import com.codingfeline.buildkonfig.compiler.FieldSpec
+{% endif %}{% if include_desktop %}import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+{% endif %}{% if include_persistence %}import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 {% endif %}import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 {%- if include_persistence %}
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 {%- endif %}
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.util.Properties
+{%- if include_desktop %}
+import java.util.UUID
+{%- endif %}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -23,17 +28,40 @@ plugins {
 }
 
 val appVersion = Properties().apply { rootProject.file("version.properties").inputStream().use(::load) }
+{%- if include_desktop %}
+val versionProperties = listOf("app.versionName", "app.versionCode").associateWith { appVersion.getProperty(it) }
+{%- endif %}
 
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
+{%- if include_persistence %}
+
+    // sqliteTest: tests against a real in-memory database, on every target that has one without a Context.
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+        common {
+            group("sqlite") {
+                withIos()
+{%- if include_desktop %}
+                withJvm()
+{%- endif %}
+            }
+        }
+    }
+{%- endif %}
 
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
+
+{%- if include_desktop %}
+
+    jvm("desktop")
+{%- endif %}
 
     listOf(
         iosX64(),
@@ -58,6 +86,7 @@ kotlin {
                 implementation(compose.material3)
 {%- if include_bottom_nav %}
                 implementation(compose.material3AdaptiveNavigationSuite)
+                implementation(libs.material3.adaptive)
                 implementation(libs.material.icons.core)
 {%- endif %}
                 implementation(compose.ui)
@@ -109,6 +138,20 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
 {%- endif %}
         }
+{%- if include_desktop %}
+
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.kotlinx.coroutines.swing)
+{%- if include_networking %}
+                implementation(libs.ktor.client.okhttp)
+                // Ktor logs through HttpLogger; this only silences SLF4J's missing-provider warning.
+                runtimeOnly(libs.slf4j.nop)
+{%- endif %}
+            }
+        }
+{%- endif %}
 {%- if include_networking %}
 
         iosMain.dependencies {
@@ -214,3 +257,33 @@ android {
 dependencies {
     debugImplementation(compose.uiTooling)
 }
+{%- if include_desktop %}
+
+compose.desktop {
+    application {
+        mainClass = "{{ package_name }}.MainKt"
+        jvmArgs += versionProperties.map { (key, value) -> "-D$key=$value" }
+
+        buildTypes.release.proguard {
+            configurationFiles.from(project.file("proguard-desktop.pro"))
+        }
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "{{ app_name }}"
+            // Dmg requires MAJOR > 0.
+            packageVersion = appVersion.getProperty("app.versionName")
+            vendor = "{{ author }}"
+            // Both identities must never change after the first release.
+            macOS { bundleID = "{{ package_name }}" }
+            windows { upgradeUuid = UUID.nameUUIDFromBytes("{{ package_name }}".toByteArray()).toString() }
+        }
+    }
+}
+
+// Every launcher (run, desktopRun, runRelease, IDE) sees the version; only the dev entry points are debug.
+tasks.withType<JavaExec>().configureEach {
+    systemProperties(versionProperties)
+    if (name == "run" || name == "desktopRun") systemProperty("app.debug", "true")
+}
+{%- endif %}

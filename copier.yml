@@ -19,6 +19,10 @@ _exclude:
   - "{% if not include_networking %}composeApp/src/*/kotlin/**/data/remote{% endif %}"
   - "{% if not include_bottom_nav %}composeApp/src/*/kotlin/**/ui/bottomnav{% endif %}"
   - "{% if not include_bottom_nav %}composeApp/src/*/kotlin/**/ui/settings{% endif %}"
+  - "{% if not include_desktop %}composeApp/src/desktopMain{% endif %}"
+  - "{% if not include_desktop %}composeApp/src/desktopTest{% endif %}"
+  - "{% if not include_desktop %}composeApp/proguard-desktop.pro{% endif %}"
+  - "{% if not include_persistence %}composeApp/src/sqliteTest{% endif %}"
   - "{% if not include_networking %}composeApp/src/*/kotlin/**/ErrorLocalizerTest.kt{% endif %}"
   - "{% if include_persistence %}composeApp/src/*/kotlin/**/InMemorySampleRepository.kt{% endif %}"
 
@@ -80,7 +84,7 @@ author:
 
 include_persistence:
   type: bool
-  help: Room database + DataStore preferences
+  help: Room database with a storage error boundary
   default: true
 
 include_networking:

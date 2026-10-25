@@ -18,7 +18,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 
-// Runs against a real in-memory SQLite database; iOS only because Android host tests have no Context.
+// Runs against a real in-memory SQLite database on iOS and desktop; Android host tests have no Context.
 class RoomSampleRepositoryTest {
     private val database =
         Room.inMemoryDatabaseBuilder<AppDatabase>().buildDatabase(TestDispatchersProvider(Dispatchers.Default))
