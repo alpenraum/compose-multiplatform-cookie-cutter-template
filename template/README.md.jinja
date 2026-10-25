@@ -1,0 +1,54 @@
+# {{ app_display_name }}
+
+Compose Multiplatform app for Android{% if include_desktop %}, iOS and desktop{% else %} and iOS{% endif %}, generated from
+[compose-multiplatform-cookie-cutter-template](https://github.com/alpenraum/compose-multiplatform-cookie-cutter-template).
+
+## Getting started
+
+```bash
+./gradlew :composeApp:assembleDebug          # Android
+./gradlew :composeApp:testDebugUnitTest      # unit tests (JVM)
+{%- if include_desktop %}
+./gradlew :composeApp:run                    # desktop
+{%- endif %}
+```
+
+iOS: open `iosApp/iosApp.xcodeproj` in Xcode. For signing on a device, create
+`iosApp/Configuration/Local.xcconfig` (gitignored) containing `TEAM_ID=<your team id>`.
+{%- if include_networking %}
+
+The backend base URL comes from BuildKonfig (`composeApp/build.gradle.kts`, `buildkonfig { }`).
+Builds use the production URL unless you pass `-Pbuildkonfig.flavor=dev`.
+{%- endif %}
+
+## Structure
+
+| Path | Contents |
+|---|---|
+| `composeApp/src/commonMain` | Shared code: `base/` (architecture, DI, errors, logging), `ui/`, `usecase/`, `data/` |
+| `composeApp/src/androidMain`, `iosMain`{% if include_desktop %}, `desktopMain`{% endif %} | Platform entry points and `actual` implementations |
+{%- if include_persistence %}
+| `composeApp/db-schemas` | Exported Room schemas — commit them (see the README inside) |
+{%- endif %}
+{%- if include_library_module %}
+| `{{ library_module_name }}` | Kotlin Multiplatform library used by `composeApp` |
+{%- endif %}
+| `iosApp` | Xcode project |
+| `docs/conventions.md` | Project rules — read before changing code |
+
+Version: Android and desktop read `version.properties`; iOS reads `iosApp/Configuration/Config.xcconfig`.
+{%- if include_sonar %}
+
+Code analysis: `SONAR_TOKEN=... ./sonar_scan.sh` ({{ sonar_host_url }}).
+{%- endif %}
+
+## Template updates
+
+```bash
+copier update     # needs a clean git working tree
+```
+
+Optional parts were chosen when the project was generated. Switching one off later via
+`copier update` deletes its files including your edits — remove it by hand instead. Switching one
+on adds its code, but this README, `CLAUDE.md` and `docs/conventions.md` are yours after the first
+copy and are not updated.

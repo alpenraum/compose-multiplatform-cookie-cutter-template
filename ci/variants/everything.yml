@@ -2,3 +2,8 @@ include_persistence: true
 include_networking: true
 include_bottom_nav: true
 include_desktop: true
+author: CI
+include_library_module: true
+library_module_name: shared-utils
+include_sonar: true
+sonar_host_url: https://sonar.example.invalid

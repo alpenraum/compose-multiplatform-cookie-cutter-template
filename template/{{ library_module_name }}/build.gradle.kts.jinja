@@ -1,0 +1,43 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
+}
+
+kotlin {
+    // Same targets as composeApp: a target missing here fails composeApp's build for that platform.
+    androidLibrary {
+        namespace = "{{ package_name }}.{{ library_package }}"
+        compileSdk =
+            libs.versions.android.compileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+
+        // Must match composeApp: inline functions cannot cross a higher-to-lower JVM target.
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+
+        // Runs commonTest on the JVM (testAndroidHostTest).
+        withHostTestBuilder {}
+    }
+{%- if include_desktop %}
+
+    jvm("desktop")
+{%- endif %}
+
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+    }
+}

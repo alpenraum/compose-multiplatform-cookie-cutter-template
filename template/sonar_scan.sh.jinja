@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Usage: SONAR_TOKEN=... ./sonar_scan.sh
+# The scanner reads SONAR_TOKEN from the environment: the token never appears in argv or the repository.
+set -eu
+if [ -z "${SONAR_TOKEN:-}" ]; then
+  echo "Set SONAR_TOKEN to a SonarQube token." >&2
+  exit 1
+fi
+./gradlew testDebugUnitTest sonar

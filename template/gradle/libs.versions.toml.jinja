@@ -30,6 +30,9 @@ mokkery = "3.0.0"
 {%- if include_desktop and include_networking %}
 slf4j = "2.0.17"
 {%- endif %}
+{%- if include_sonar %}
+sonarqube = "7.2.2.6593"
+{%- endif %}
 {%- if include_persistence %}
 room = "2.8.3"
 sqlite = "2.6.1"
@@ -81,6 +84,9 @@ slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
+{%- if include_library_module %}
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+{%- endif %}
 {%- if include_networking %}
 buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildKonfig" }
 {%- endif %}
@@ -90,6 +96,9 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
+{%- if include_sonar %}
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+{%- endif %}
 {%- if include_persistence %}
 room = { id = "androidx.room", version.ref = "room" }
 {%- endif %}

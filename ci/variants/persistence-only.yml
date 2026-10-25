@@ -1,2 +1,5 @@
 include_persistence: true
 include_networking: false
+include_desktop: true
+include_library_module: true
+author: CI

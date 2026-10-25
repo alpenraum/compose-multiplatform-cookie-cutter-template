@@ -2,6 +2,9 @@ plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
     alias(libs.plugins.androidApplication) apply false
+{%- if include_library_module %}
+    alias(libs.plugins.androidKotlinMultiplatformLibrary) apply false
+{%- endif %}
 {%- if include_networking %}
     alias(libs.plugins.buildKonfig) apply false
 {%- endif %}
@@ -11,7 +14,22 @@ plugins {
     alias(libs.plugins.kotlinSerialization) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.mokkery) apply false
+{%- if include_sonar %}
+    alias(libs.plugins.sonarqube)
+{%- endif %}
 {%- if include_persistence %}
     alias(libs.plugins.room) apply false
 {%- endif %}
 }
+{%- if include_sonar %}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "{{ sonar_project_key }}")
+        property("sonar.host.url", "{{ sonar_host_url }}")
+        property("sonar.projectVersion", java.util.Properties().apply { file("version.properties").inputStream().use(::load) }.getProperty("app.versionName"))
+        // Koin/KSP, compose resources and BuildKonfig output are not ours to fix.
+        property("sonar.exclusions", "**/build/**")
+    }
+}
+{%- endif %}

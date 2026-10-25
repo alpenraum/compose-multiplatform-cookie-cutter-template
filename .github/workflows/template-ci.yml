@@ -3,7 +3,16 @@ name: template-ci
 on:
   push:
     branches: [main]
+    paths-ignore: ["**.md", "docs/**"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
   COPIER_VERSION: "9.19.1"
@@ -40,18 +49,20 @@ jobs:
       - name: Build and test
         working-directory: ${{ runner.temp }}/app
         # Not allTests: on Linux it would compile the iOS test sources, and KSP skips iOS on non-macOS hosts.
-        run: ./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:assembleDebug :composeApp:assembleRelease :composeApp:testDebugUnitTest
-      - name: Desktop tests and release package
-        working-directory: ${{ runner.temp }}/app
-        run: if [ -d composeApp/src/desktopMain ]; then ./gradlew :composeApp:desktopTest :composeApp:packageReleaseUberJarForCurrentOS; fi
+        # Unprefixed test tasks run in every module that has them (e.g. the library module).
+        run: |
+          tasks=":composeApp:compileCommonMainKotlinMetadata :composeApp:assembleDebug :composeApp:assembleRelease testDebugUnitTest"
+          if ./gradlew -q tasks --all | grep -q ':testAndroidHostTest'; then tasks="$tasks testAndroidHostTest"; fi
+          if [ -d composeApp/src/desktopMain ]; then tasks="$tasks desktopTest :composeApp:packageReleaseUberJarForCurrentOS"; fi
+          ./gradlew $tasks
 
   ios:
-    needs: variants
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        variant: ${{ fromJson(needs.variants.outputs.list) }}
+        # iOS sources differ only by the persistence option; these two cover every iOS file.
+        variant: [minimal, everything]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,9 +75,13 @@ jobs:
       - run: pipx install "copier==$COPIER_VERSION"
       - name: Generate
         run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('template/gradle/libs.versions.toml.jinja') }}
       - name: iOS tests
         working-directory: ${{ runner.temp }}/app
-        run: ./gradlew :composeApp:iosSimulatorArm64Test
+        run: ./gradlew iosSimulatorArm64Test
       # No shared scheme is committed, hence -target.
       - name: Build Xcode project
         working-directory: ${{ runner.temp }}/app

@@ -103,6 +103,10 @@ kotlin {
 
                 implementation(libs.kermit)
                 implementation(libs.kotlinx.serialization.json)
+{%- if include_library_module %}
+
+                implementation(project(":{{ library_module_name }}"))
+{%- endif %}
 {%- if include_networking %}
 
                 implementation(libs.ktor.client.core)

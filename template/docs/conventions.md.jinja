@@ -44,7 +44,6 @@ replace it — contradictions are bugs.
 - `technicalDetail` holds structured facts (error type, status, code) — never stack traces, URLs, tokens or payloads. Full traces go to the logger.
 - Never "Something went wrong": every message says what happened and, where possible, what the user can do.
 - No empty catch and no catch-log-continue without an explicit decision about the failed operation. `CancellationException` is always rethrown.
-
 {% if include_networking %}
 ## Networking
 
@@ -61,6 +60,13 @@ replace it — contradictions are bugs.
 - Release packaging (`packageRelease*`) runs ProGuard: keep and `-dontwarn` rules go into `composeApp/proguard-desktop.pro`; anything loaded by reflection or ServiceLoader needs a keep rule.
 - Distribute native packages (Dmg/Msi/Deb): the uber jar carries no version properties.
 {% endif %}
+{%- if include_library_module %}
+## Library module
+
+- `{{ library_module_name }}` is plain Kotlin Multiplatform: no Compose, no Koin. `composeApp` registers its types (`@Module` provider or `platformModule()`).
+- It declares the same targets as `composeApp`; adding a target means adding it in both.
+
+{% endif -%}
 ## Dependency injection
 
 - Classes are registered with Koin annotations (`@Single`, `@Factory`, `@KoinViewModel`) in `commonMain`; only platform objects go into the `platformModule()` DSL.
@@ -73,7 +79,7 @@ replace it — contradictions are bugs.
 
 ## Testing
 
-- Tests live in `commonTest` and mock with Mokkery (interfaces only — a class that needs mocking gets an interface).
+- Tests live in `commonTest` by default (platform test source sets only when a test needs a platform API) and mock with Mokkery (interfaces only — a class that needs mocking gets an interface).
 - ViewModel tests inject `TestDispatchersProvider` with a `StandardTestDispatcher`, collect state with `collectInBackground`, and verify navigation on a `Navigator` mock. Test doubles never live in `commonMain`.
 - Each test names the behaviour it protects. No tests asserting that the language or a framework works.
 - No test depends on wall-clock time, real network or real hardware.
