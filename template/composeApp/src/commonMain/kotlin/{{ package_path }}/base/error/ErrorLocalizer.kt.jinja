@@ -1,6 +1,10 @@
 package {{ package_name }}.base.error
 
 import {{ package_name }}.resources.Res
+{%- if include_persistence %}
+import {{ package_name }}.resources.error_storage_action
+import {{ package_name }}.resources.error_storage_message
+{%- endif %}
 import {{ package_name }}.resources.error_unexpected_action
 import {{ package_name }}.resources.error_unexpected_message
 import org.jetbrains.compose.resources.StringResource
@@ -15,5 +19,8 @@ object ErrorLocalizer {
     fun localize(error: AppError): ErrorText =
         when (error) {
             is AppError.Unexpected -> ErrorText(Res.string.error_unexpected_message, action = Res.string.error_unexpected_action)
+{%- if include_persistence %}
+            is AppError.Storage -> ErrorText(Res.string.error_storage_message, action = Res.string.error_storage_action)
+{%- endif %}
         }
 }

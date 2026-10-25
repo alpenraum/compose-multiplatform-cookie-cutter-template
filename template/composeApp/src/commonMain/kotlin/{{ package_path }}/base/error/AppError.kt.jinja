@@ -11,6 +11,14 @@ sealed interface AppError {
     ) : AppError {
         override val technicalDetail: String = "unexpected: ${cause::class.simpleName}"
     }
+{%- if include_persistence %}
+
+    data class Storage(
+        val operation: String,
+    ) : AppError {
+        override val technicalDetail: String = "storage: $operation"
+    }
+{%- endif %}
 }
 
 class AppException(

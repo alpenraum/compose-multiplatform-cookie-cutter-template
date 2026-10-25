@@ -2,6 +2,10 @@
 <resources>
     <string name="error_unexpected_message">Ein unerwarteter Fehler ist aufgetreten.</string>
     <string name="error_unexpected_action">Bitte versuche es erneut. Wenn der Fehler bleibt, öffne die Details und sende sie an den Support.</string>
+{%- if include_persistence %}
+    <string name="error_storage_message">Deine Daten konnten nicht gelesen oder gespeichert werden.</string>
+    <string name="error_storage_action">Starte die App neu. Wenn der Fehler bleibt, sorge für freien Speicherplatz auf dem Gerät.</string>
+{%- endif %}
     <string name="error_show_details">Details anzeigen</string>
     <string name="error_hide_details">Details ausblenden</string>
     <string name="action_retry">Erneut versuchen</string>

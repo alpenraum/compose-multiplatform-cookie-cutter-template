@@ -1,0 +1,23 @@
+package {{ package_name }}.data.db
+
+import androidx.sqlite.SQLiteException
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.error.AppException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+
+// The storage boundary: SQLite failures leave the data layer only as AppError.Storage.
+internal suspend fun <T> storageCall(
+    operation: String,
+    block: suspend () -> T,
+): T =
+    try {
+        block()
+    } catch (exception: SQLiteException) {
+        throw AppException(AppError.Storage(operation), exception)
+    }
+
+internal fun <T> Flow<T>.mapStorageErrors(operation: String): Flow<T> =
+    catch { exception ->
+        throw if (exception is SQLiteException) AppException(AppError.Storage(operation), exception) else exception
+    }

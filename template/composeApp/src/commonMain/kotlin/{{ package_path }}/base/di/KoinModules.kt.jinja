@@ -1,5 +1,7 @@
 package {{ package_name }}.base.di
-
+{% if include_persistence %}
+import {{ package_name }}.data.db.DatabaseModule
+{%- endif %}
 import org.koin.core.module.Module
 import org.koin.ksp.generated.module
 
@@ -7,4 +9,7 @@ fun koinModules(): List<Module> =
     listOf(
         platformModule(),
         {{ app_name }}GeneratedModule().module,
+{%- if include_persistence %}
+        DatabaseModule().module,
+{%- endif %}
     )

@@ -16,6 +16,10 @@ cd my-app && copier update
 ```
 
 `copier update` needs the generated project to be a git repository with a clean working tree.
+
+Optional parts (persistence, networking, …) are chosen at copy time. Re-answering one with
+`copier update` regenerates or deletes its files wholesale — switching an option off deletes your
+edits to those files too, so treat that as a manual removal instead.
 `README.md`, `CLAUDE.md`, `docs/conventions.md` and `version.properties` belong to the generated
 project after the first copy; updates never overwrite them.
 

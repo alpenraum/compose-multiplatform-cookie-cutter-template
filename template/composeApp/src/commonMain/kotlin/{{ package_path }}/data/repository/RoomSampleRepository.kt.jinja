@@ -1,0 +1,34 @@
+package {{ package_name }}.data.repository
+
+import {{ package_name }}.data.db.SampleItemDao
+import {{ package_name }}.data.db.mapStorageErrors
+import {{ package_name }}.data.db.model.SampleItemEntity
+import {{ package_name }}.data.db.storageCall
+import {{ package_name }}.data.repository.model.SampleItem
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import org.koin.core.annotation.Single
+
+@Single(binds = [SampleRepository::class])
+class RoomSampleRepository(
+    private val sampleItemDao: SampleItemDao,
+) : SampleRepository {
+    override fun observeItems(): Flow<List<SampleItem>> =
+        sampleItemDao
+            .observeAll()
+            .map { entities -> entities.map { it.toDomain() } }
+            .mapStorageErrors("observe sample items")
+
+    override fun observeItem(id: Long): Flow<SampleItem?> =
+        sampleItemDao
+            .observe(id)
+            .map { it?.toDomain() }
+            .mapStorageErrors("observe sample item")
+
+    override suspend fun addItem(title: String) =
+        storageCall("add sample item") {
+            sampleItemDao.insert(SampleItemEntity(title = title))
+        }
+
+    private fun SampleItemEntity.toDomain() = SampleItem(id = id, title = title)
+}

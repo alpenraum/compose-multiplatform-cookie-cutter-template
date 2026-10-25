@@ -2,6 +2,10 @@
 <resources>
     <string name="error_unexpected_message">An unexpected error occurred.</string>
     <string name="error_unexpected_action">Please try again. If it keeps happening, open the details and send them to support.</string>
+{%- if include_persistence %}
+    <string name="error_storage_message">Your data could not be read or saved.</string>
+    <string name="error_storage_action">Restart the app. If it keeps happening, make sure your device has free storage.</string>
+{%- endif %}
     <string name="error_show_details">Show details</string>
     <string name="error_hide_details">Hide details</string>
     <string name="action_retry">Retry</string>

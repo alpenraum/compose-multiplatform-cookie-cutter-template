@@ -1,0 +1,57 @@
+package {{ package_name }}.data.repository
+
+import androidx.room.Room
+import {{ package_name }}.base.TestDispatchersProvider
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.error.AppException
+import {{ package_name }}.data.db.AppDatabase
+import {{ package_name }}.data.db.buildDatabase
+import {{ package_name }}.data.db.model.SampleItemEntity
+import {{ package_name }}.data.db.storageCall
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+
+// Runs against a real in-memory SQLite database; iOS only because Android host tests have no Context.
+class RoomSampleRepositoryTest {
+    private val database =
+        Room.inMemoryDatabaseBuilder<AppDatabase>().buildDatabase(TestDispatchersProvider(Dispatchers.Default))
+    private val repository = RoomSampleRepository(database.sampleItemDao())
+
+    @AfterTest
+    fun closeDatabase() {
+        database.close()
+    }
+
+    @Test
+    fun addedItemsAreObservedInInsertionOrder() =
+        runTest {
+            repository.addItem("Milk")
+            repository.addItem("Bread")
+
+            assertEquals(listOf("Milk", "Bread"), repository.observeItems().first().map { it.title })
+        }
+
+    @Test
+    fun unknownIdIsObservedAsNull() =
+        runTest {
+            assertNull(repository.observeItem(42).first())
+        }
+
+    @Test
+    fun sqliteFailureLeavesTheBoundaryAsStorageError() =
+        runTest {
+            val dao = database.sampleItemDao()
+            dao.insert(SampleItemEntity(id = 1, title = "Milk"))
+
+            val exception = assertFailsWith<AppException> { storageCall("insert duplicate") { dao.insert(SampleItemEntity(id = 1, title = "Milk")) } }
+
+            assertIs<AppError.Storage>(exception.error)
+        }
+}

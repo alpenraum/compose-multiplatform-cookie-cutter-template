@@ -1,0 +1,17 @@
+package {{ package_name }}.data.db
+
+import {{ package_name }}.base.DispatchersProvider
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Single
+
+@Module
+class DatabaseModule {
+    @Single
+    fun database(
+        databaseFactory: DatabaseFactory,
+        dispatchersProvider: DispatchersProvider,
+    ): AppDatabase = databaseFactory.createBuilder().buildDatabase(dispatchersProvider)
+
+    @Single
+    fun sampleItemDao(database: AppDatabase): SampleItemDao = database.sampleItemDao()
+}

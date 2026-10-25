@@ -1,0 +1,16 @@
+package {{ package_name }}.base.di
+
+import android.content.Context
+import org.koin.dsl.module
+import org.koin.test.verify.verify
+import kotlin.test.Test
+
+// Checks every constructor dependency has a definition without creating anything (JVM only).
+class KoinModulesVerifyTest {
+    @Test
+    fun everyDefinitionHasItsDependencies() {
+        module { includes(koinModules()) }.verify(
+            extraTypes = listOf(Context::class, Long::class, List::class),
+        )
+    }
+}

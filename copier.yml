@@ -10,8 +10,12 @@ _skip_if_exists:
   - docs/conventions.md
   - version.properties
 
-# Optional parts are plain directories in template/; they are dropped here, per option.
-_exclude: []
+# Optional parts are plain files in template/, dropped here per option. Patterns match rendered paths (no .jinja).
+_exclude:
+  - "{% if not include_persistence %}composeApp/src/*/kotlin/**/data/db{% endif %}"
+  - "{% if not include_persistence %}composeApp/src/*/kotlin/**/RoomSampleRepository*.kt{% endif %}"
+  - "{% if not include_persistence %}composeApp/db-schemas{% endif %}"
+  - "{% if include_persistence %}composeApp/src/*/kotlin/**/InMemorySampleRepository.kt{% endif %}"
 
 _message_after_copy: |
   {{ app_display_name }} generated.
@@ -22,6 +26,9 @@ _message_after_copy: |
     2. iOS signing: create iosApp/Configuration/Local.xcconfig with `TEAM_ID=<your team id>`
        (gitignored)
     3. ./gradlew :composeApp:assembleDebug
+
+  Optional parts are chosen now. Switching one off later is a manual removal: `copier update`
+  with a changed answer deletes the generated files, including your edits to them.
 
 app_name:
   type: str

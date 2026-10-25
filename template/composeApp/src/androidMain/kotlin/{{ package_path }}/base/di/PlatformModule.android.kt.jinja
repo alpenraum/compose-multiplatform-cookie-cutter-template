@@ -1,6 +1,16 @@
 package {{ package_name }}.base.di
-
+{% if include_persistence %}
+import {{ package_name }}.data.db.DatabaseFactory
+import org.koin.android.ext.koin.androidContext
+{%- endif %}
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
+{% if include_persistence -%}
+actual fun platformModule(): Module =
+    module {
+        single { DatabaseFactory(androidContext()) }
+    }
+{%- else -%}
 actual fun platformModule(): Module = module {}
+{%- endif %}

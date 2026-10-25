@@ -1,0 +1,30 @@
+package {{ package_name }}.data.db
+
+import androidx.room.ConstructedBy
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import {{ package_name }}.base.DispatchersProvider
+import {{ package_name }}.data.db.model.SampleItemEntity
+
+// Bump version for every schema change and add an AutoMigration or Migration; see composeApp/db-schemas/README.md.
+@Database(entities = [SampleItemEntity::class], version = 1, exportSchema = true, autoMigrations = [])
+@ConstructedBy(AppDatabaseConstructor::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun sampleItemDao(): SampleItemDao
+}
+
+// Room generates the actuals.
+@Suppress("KotlinNoActualForExpect")
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
+    override fun initialize(): AppDatabase
+}
+
+fun RoomDatabase.Builder<AppDatabase>.buildDatabase(dispatchersProvider: DispatchersProvider): AppDatabase =
+    setDriver(BundledSQLiteDriver())
+        .setQueryCoroutineContext(dispatchersProvider.io)
+        .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+        .build()
+
+internal const val DB_FILE_NAME = "app.db"

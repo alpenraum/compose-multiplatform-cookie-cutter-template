@@ -1,4 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+{%- if include_persistence %}
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+{%- endif %}
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.util.Properties
 
@@ -10,6 +13,9 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.mokkery)
+{%- if include_persistence %}
+    alias(libs.plugins.room)
+{%- endif %}
 }
 
 val appVersion = Properties().apply { rootProject.file("version.properties").inputStream().use(::load) }
@@ -60,12 +66,21 @@ kotlin {
 
                 implementation(libs.kermit)
                 implementation(libs.kotlinx.serialization.json)
+{%- if include_persistence %}
+
+                implementation(libs.room.runtime)
+                implementation(libs.sqlite.bundled)
+{%- endif %}
             }
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+        }
+
+        androidUnitTest.dependencies {
+            implementation(libs.koin.test)
         }
 
         androidMain.dependencies {
@@ -78,10 +93,26 @@ kotlin {
 
 dependencies {
     add("kspCommonMainMetadata", libs.koin.annotations.ksp)
+{%- if include_persistence %}
+    // Room generates per-target code (AppDatabaseConstructor actuals), so it runs on every target.
+    kotlin.targets
+        .filter { it.platformType != KotlinPlatformType.common }
+        .forEach { add("ksp${it.targetName.replaceFirstChar(Char::uppercase)}", libs.room.compiler) }
+{%- endif %}
 }
+{%- if include_persistence %}
 
+room {
+    schemaDirectory("$projectDir/db-schemas")
+}
+{%- endif %}
+
+// Every compilation and every per-target KSP run reads the Koin code generated from common sources.
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
     if (name != "kspCommonMainKotlinMetadata") dependsOn("kspCommonMainKotlinMetadata")
+}
+tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
+    dependsOn("kspCommonMainKotlinMetadata")
 }
 
 ksp {

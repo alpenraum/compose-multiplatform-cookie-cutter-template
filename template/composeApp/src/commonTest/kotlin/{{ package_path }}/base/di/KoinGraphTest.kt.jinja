@@ -2,9 +2,19 @@ package {{ package_name }}.base.di
 
 import {{ package_name }}.base.DispatchersProvider
 import {{ package_name }}.base.logger.{{ app_name }}Logger
+{%- if include_persistence %}
+import {{ package_name }}.data.db.SampleItemDao
+import {{ package_name }}.data.repository.SampleRepository
+{%- endif %}
 import {{ package_name }}.ui.main.NavViewModel
 import {{ package_name }}.usecase.sample.AddSampleItemUseCase
+{%- if include_persistence %}
+import dev.mokkery.mock
+{%- endif %}
 import org.koin.dsl.koinApplication
+{%- if include_persistence %}
+import org.koin.dsl.module
+{%- endif %}
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -12,11 +22,20 @@ import kotlin.test.assertTrue
 class KoinGraphTest {
     @Test
     fun appModulesResolveCoreBindings() {
+{%- if include_persistence %}
+        // Opening a real database needs a platform context; everything above the DAO resolves for real.
+        val testOverrides = module { single<SampleItemDao> { mock() } }
+        val koin = koinApplication { modules(koinModules() + testOverrides) }.koin
+{%- else %}
         val koin = koinApplication { modules(koinModules()) }.koin
+{%- endif %}
 
         koin.get<DispatchersProvider>()
         koin.get<{{ app_name }}Logger>()
         koin.get<AddSampleItemUseCase>()
+{%- if include_persistence %}
+        koin.get<SampleRepository>()
+{%- endif %}
         assertTrue(koin.get<NavViewModel>().navGraphs.isNotEmpty())
     }
 }
