@@ -10,7 +10,10 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinSerialization) apply false
+{%- if include_persistence %}
     alias(libs.plugins.ksp) apply false
+{%- endif %}
+    alias(libs.plugins.koinCompiler) apply false
     alias(libs.plugins.mokkery) apply false
 {%- if include_sonar %}
     alias(libs.plugins.sonarqube)
@@ -26,7 +29,7 @@ sonar {
         property("sonar.projectKey", "{{ sonar_project_key }}")
         property("sonar.host.url", "{{ sonar_host_url }}")
         property("sonar.projectVersion", java.util.Properties().apply { file("version.properties").inputStream().use(::load) }.getProperty("app.versionName"))
-        // Koin/KSP, compose resources and BuildKonfig output are not ours to fix.
+        // Generated code (Room/KSP, compose resources, BuildKonfig) is not ours to fix.
         property("sonar.exclusions", "**/build/**")
     }
 }

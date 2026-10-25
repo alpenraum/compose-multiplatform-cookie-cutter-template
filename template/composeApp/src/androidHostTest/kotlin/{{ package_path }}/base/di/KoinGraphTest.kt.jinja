@@ -13,6 +13,8 @@ import {{ package_name }}.data.remote.RemoteSampleDataSource
 import {{ package_name }}.data.repository.SampleRepository
 {%- endif %}
 import {{ package_name }}.ui.main.NavViewModel
+import {{ package_name }}.ui.sample.SampleDetailViewModel
+import {{ package_name }}.ui.sample.SampleViewModel
 import {{ package_name }}.usecase.sample.AddSampleItemUseCase
 {%- if include_persistence %}
 import dev.mokkery.mock
@@ -20,30 +22,50 @@ import dev.mokkery.mock
 {%- if include_networking %}
 import io.ktor.client.HttpClient
 {%- endif %}
-import org.koin.dsl.koinApplication
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.koin.core.parameter.parametersOf
 {%- if include_persistence %}
 import org.koin.dsl.module
 {%- endif %}
+import org.koin.plugin.module.dsl.koinApplication
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-// KOIN_CONFIG_CHECK is off, so a missing binding only shows up at runtime.
+// The compiler plugin checks the graph at each entry point at build time; this resolves it at runtime. JVM only:
+// the plugin cannot see main-compilation definitions from Kotlin/Native test compilations.
+@OptIn(ExperimentalCoroutinesApi::class)
 class KoinGraphTest {
+    // ViewModels start their scope on the main dispatcher; JVM host tests have none.
     @BeforeTest
     fun setUp() {
         initializeTestPlatform()
+        Dispatchers.setMain(StandardTestDispatcher())
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
-    fun appModulesResolveCoreBindings() {
+    fun appGraphResolves() {
 {%- if include_persistence %}
         // Opening a real database needs a platform context; everything above the DAO resolves for real.
         val testOverrides = module { single<SampleItemDao> { mock() } }
-        val koin = koinApplication { modules(koinModules() + testOverrides) }.koin
-{%- else %}
-        val koin = koinApplication { modules(koinModules()) }.koin
 {%- endif %}
+        val koin =
+            koinApplication<{{ app_name }}Koin> {
+                modules(platformModule())
+{%- if include_persistence %}
+                modules(testOverrides)
+{%- endif %}
+            }.koin
 
         koin.get<DispatchersProvider>()
         koin.get<{{ app_name }}Logger>()
@@ -55,6 +77,8 @@ class KoinGraphTest {
         koin.get<RemoteSampleDataSource>()
         koin.get<HttpClient>().close()
 {%- endif %}
+        koin.get<SampleViewModel>()
+        koin.get<SampleDetailViewModel> { parametersOf(1L) }
         assertTrue(koin.get<NavViewModel>().navGraphs.isNotEmpty())
     }
 }

@@ -40,8 +40,8 @@ Android and iOS, with optional desktop.
 
 ### A multiplatform build that operates
 
-- Koin, KSP and Room are set up for all targets. A comment in the build file tells why each setting is
-  necessary.
+- Koin (with its compiler plugin) and Room (with KSP) are set up for all targets. A comment in the build
+  file tells why each setting is necessary.
 - Platform differences are `expect` declarations. If you add a target, the compiler shows each part
   that is missing.
 - Release builds are set up: R8 for Android and ProGuard rules for desktop. Each rule tells which
@@ -54,10 +54,10 @@ Android and iOS, with optional desktop.
 
 - The template checks the names that you enter. It stops a name that cannot compile, for example a
   package with a Kotlin keyword.
-- Two tests check the dependency graph. A missing Koin binding causes a test failure, not a crash on
-  the first screen.
-- Dependabot updates Compose with its AndroidX libraries, and Kotlin with KSP, in one group. These
-  versions must change together.
+- The Koin compiler plugin checks the dependency graph during the build. A missing binding stops the
+  build, not the app on its first screen.
+- Dependabot updates Compose with its AndroidX libraries, and Kotlin with its compiler plugins (KSP,
+  Koin, Mokkery), in one group. These versions must change together.
 
 ### A template that you can test and update
 
@@ -82,6 +82,7 @@ cd my-app && copier update
 ```
 
 `copier update` needs the generated project to be a git repository with a clean working tree.
+The iOS app needs an Apple Silicon Mac: Compose Multiplatform publishes no Intel simulator libraries.
 `com.example.<app>` is only a placeholder — app stores reject it, so choose your own `package_name`.
 
 Optional parts (persistence, networking, …) are chosen at copy time. Re-answering one with
@@ -126,6 +127,9 @@ Multiplatform module. `composeApp` is now a library, and the Android entry point
 - Build the app with `:androidApp:assembleDebug`.
 
 Re-apply your edits from git history, and update the commands in your `README.md` and `CLAUDE.md`.
+
+The Koin 4.2 upgrade also changes your own code: `@KoinViewModel` moves to `org.koin.core.annotation`,
+Koin starts with `startKoin<<App>Koin>`, and your own `@Module` classes go into `base/di/<App>Koin.kt`.
 
 ## Developing the template
 

@@ -4,11 +4,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import {{ package_name }}.base.di.koinModules
-import org.koin.core.context.startKoin
+import {{ package_name }}.base.di.platformModule
+import {{ package_name }}.base.di.{{ app_name }}Koin
+import org.koin.plugin.module.dsl.startKoin
 
 fun main() {
-    startKoin { modules(koinModules()) }
+    startKoin<{{ app_name }}Koin> { modules(platformModule()) }
     application {
         Window(
             onCloseRequest = ::exitApplication,

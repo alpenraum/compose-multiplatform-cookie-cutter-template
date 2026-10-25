@@ -2,13 +2,15 @@ package {{ package_name }}.data.db
 
 import {{ package_name }}.base.DispatchersProvider
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 @Module
 class DatabaseModule {
     @Single
     fun database(
-        databaseFactory: DatabaseFactory,
+        // Provided by platformModule() (needs the platform context), outside the annotated graph.
+        @Provided databaseFactory: DatabaseFactory,
         dispatchersProvider: DispatchersProvider,
     ): AppDatabase = databaseFactory.createBuilder().buildDatabase(dispatchersProvider)
 

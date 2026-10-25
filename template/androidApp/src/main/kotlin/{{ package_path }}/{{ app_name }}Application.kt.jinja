@@ -3,9 +3,10 @@ package {{ package_name }}
 import android.app.Application
 import android.content.Context
 import {{ package_name }}.base.BuildInfo
-import {{ package_name }}.base.di.koinModules
+import {{ package_name }}.base.di.{{ app_name }}Koin
+import {{ package_name }}.base.di.platformModule
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
+import org.koin.plugin.module.dsl.startKoin
 
 class {{ app_name }}Application : Application() {
     override fun attachBaseContext(base: Context) {
@@ -20,9 +21,9 @@ class {{ app_name }}Application : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        startKoin {
+        startKoin<{{ app_name }}Koin> {
             androidContext(this@{{ app_name }}Application)
-            modules(koinModules())
+            modules(platformModule())
         }
     }
 }

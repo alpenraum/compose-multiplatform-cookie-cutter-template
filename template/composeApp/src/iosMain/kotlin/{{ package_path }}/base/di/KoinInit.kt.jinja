@@ -1,9 +1,9 @@
 package {{ package_name }}.base.di
 
-import org.koin.core.context.startKoin
+import org.koin.plugin.module.dsl.startKoin
 
 fun initKoin() {
-    startKoin {
-        modules(koinModules())
+    startKoin<{{ app_name }}Koin> {
+        modules(platformModule())
     }
 }

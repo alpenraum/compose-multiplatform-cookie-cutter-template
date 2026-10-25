@@ -1,0 +1,23 @@
+package {{ package_name }}.base.di
+{% if include_networking %}
+import {{ package_name }}.base.network.NetworkModule
+{%- endif %}
+{%- if include_persistence %}
+import {{ package_name }}.data.db.DatabaseModule
+{%- endif %}
+import org.koin.core.annotation.KoinApplication
+
+// Every annotated module the app loads. Entry points start Koin with this type, so the compiler plugin can check
+// the whole graph at build time; a new @Module is registered here.
+@KoinApplication(
+    modules = [
+        {{ app_name }}GeneratedModule::class,
+{%- if include_persistence %}
+        DatabaseModule::class,
+{%- endif %}
+{%- if include_networking %}
+        NetworkModule::class,
+{%- endif %}
+    ],
+)
+object {{ app_name }}Koin

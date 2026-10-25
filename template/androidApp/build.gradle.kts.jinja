@@ -6,6 +6,8 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
+    // startKoin<T>() is rewritten by the plugin, and the full graph is checked where it is called.
+    alias(libs.plugins.koinCompiler)
 }
 
 val appVersion = Properties().apply { rootProject.file("version.properties").inputStream().use(::load) }

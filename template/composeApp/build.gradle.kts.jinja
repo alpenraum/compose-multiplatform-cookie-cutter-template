@@ -5,7 +5,6 @@
 {%- if include_persistence %}
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 {%- endif %}
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 {%- if include_desktop %}
 import java.util.Properties
 import java.util.UUID
@@ -17,7 +16,10 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.koinCompiler)
+{%- if include_persistence %}
     alias(libs.plugins.ksp)
+{%- endif %}
     alias(libs.plugins.mokkery)
 {%- if include_persistence %}
     alias(libs.plugins.room)
@@ -82,8 +84,8 @@ kotlin {
     jvm("desktop")
 {%- endif %}
 
+    // No iosX64: Compose Multiplatform 1.12 publishes for Apple Silicon simulators and devices only.
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -96,21 +98,18 @@ kotlin {
 
     sourceSets {
         commonMain {
-            // Koin annotation processing runs once on common code; every target compiles its output.
-            kotlin.srcDir(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/kotlin"))
-
             dependencies {
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material3)
 {%- if include_bottom_nav %}
-                implementation(compose.material3AdaptiveNavigationSuite)
+                implementation(libs.compose.material3.adaptive.navigation.suite)
                 implementation(libs.material3.adaptive)
                 implementation(libs.material.icons.core)
 {%- endif %}
-                implementation(compose.ui)
-                implementation(compose.components.resources)
-                implementation(compose.components.uiToolingPreview)
+                implementation(libs.compose.ui)
+                implementation(libs.compose.components.resources)
+                implementation(libs.compose.ui.tooling.preview)
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.lifecycle.runtime.compose)
                 implementation(libs.androidx.navigation.compose)
@@ -149,10 +148,6 @@ kotlin {
 {%- endif %}
         }
 
-        getByName("androidHostTest").dependencies {
-            implementation(libs.koin.test)
-        }
-
         androidMain.dependencies {
             implementation(libs.koin.android)
 {%- if include_networking %}
@@ -182,34 +177,18 @@ kotlin {
     }
 }
 
-dependencies {
-    add("kspCommonMainMetadata", libs.koin.annotations.ksp)
 {%- if include_persistence %}
+dependencies {
     // Room generates per-target code (AppDatabaseConstructor actuals), so it runs on every target.
     kotlin.targets
         .filter { it.platformType != KotlinPlatformType.common }
         .forEach { add("ksp${it.targetName.replaceFirstChar(Char::uppercase)}", libs.room.compiler) }
-{%- endif %}
 }
-{%- if include_persistence %}
 
 room {
     schemaDirectory("$projectDir/db-schemas")
 }
 {%- endif %}
-
-// Every compilation and every per-target KSP run reads the Koin code generated from common sources.
-tasks.withType<KotlinCompilationTask<*>>().configureEach {
-    if (name != "kspCommonMainKotlinMetadata") dependsOn("kspCommonMainKotlinMetadata")
-}
-tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
-}
-
-ksp {
-    arg("KOIN_USE_COMPOSE_VIEWMODEL", "true")
-    arg("KOIN_CONFIG_CHECK", "false")
-}
 
 {% if include_networking -%}
 buildkonfig {
@@ -231,7 +210,7 @@ compose.resources {
 
 dependencies {
     // @Preview rendering in the IDE; the Android-KMP library has no debug variant.
-    "androidRuntimeClasspath"(compose.uiTooling)
+    "androidRuntimeClasspath"(libs.compose.ui.tooling)
 }
 {%- if include_desktop %}
 

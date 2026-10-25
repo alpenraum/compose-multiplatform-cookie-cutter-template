@@ -12,6 +12,7 @@ import {{ package_name }}.base.logger.{{ app_name }}Logger
 import {{ package_name }}.data.repository.SampleRepository
 import {{ package_name }}.data.repository.model.SampleItem
 import {{ package_name }}.ui.base.navigation.Navigator
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -20,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SampleDetailViewModelTest {
     private val repository = mock<SampleRepository>()
 

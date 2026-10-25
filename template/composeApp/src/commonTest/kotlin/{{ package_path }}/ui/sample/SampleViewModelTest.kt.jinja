@@ -20,6 +20,7 @@ import {{ package_name }}.data.repository.model.SampleItem
 import {{ package_name }}.ui.base.navigation.Navigator
 import {{ package_name }}.ui.main.MainRoute
 import {{ package_name }}.usecase.sample.AddSampleItemUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -33,6 +34,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SampleViewModelTest {
     private val navigator =
         mock<Navigator> {

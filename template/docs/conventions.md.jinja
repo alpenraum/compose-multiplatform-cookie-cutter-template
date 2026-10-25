@@ -70,7 +70,8 @@ replace it — contradictions are bugs.
 {% endif -%}
 ## Dependency injection
 
-- Classes are registered with Koin annotations (`@Single`, `@Factory`, `@KoinViewModel`) in `commonMain`; only platform objects go into the `platformModule()` DSL.
+- Classes are registered with Koin annotations (`@Single`, `@Factory`, `@KoinViewModel`) in `commonMain`; only platform objects go into the `platformModule()` DSL, and annotated code that needs one marks the parameter `@Provided`.
+- A new `@Module` class is added to `@KoinApplication(modules = …)` in `base/di/{{ app_name }}Koin.kt`; entry points start Koin with `startKoin<{{ app_name }}Koin>`.
 - Dependencies arrive through constructors. No `KoinComponent`, no global or static mutable state, no `object` holding dependencies.
 
 ## Logging

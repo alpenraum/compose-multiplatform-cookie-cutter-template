@@ -23,7 +23,7 @@ jobs:
     outputs:
       list: ${{ steps.list.outputs.list }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: list
         run: echo "list=$(ls ci/variants/*.yml | xargs -n1 basename | sed 's/\.yml$//' | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
 
@@ -35,14 +35,17 @@ jobs:
       matrix:
         variant: ${{ fromJson(needs.variants.outputs.list) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          # Open-source cache; v6's default enhanced cache is proprietary.
+          cache-provider: basic
       - run: pipx install "copier==$COPIER_VERSION"
       - name: Generate
         run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
@@ -63,18 +66,21 @@ jobs:
         # iOS sources differ only by the persistence option; these two cover every iOS file.
         variant: [minimal, everything]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          # Open-source cache; v6's default enhanced cache is proprietary.
+          cache-provider: basic
       - run: pipx install "copier==$COPIER_VERSION"
       - name: Generate
         run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('template/gradle/libs.versions.toml.jinja') }}
@@ -92,14 +98,17 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          # Open-source cache; v6's default enhanced cache is proprietary.
+          cache-provider: basic
       - run: pipx install "copier==$COPIER_VERSION"
       - name: Update a project generated from the previous commit
         run: |

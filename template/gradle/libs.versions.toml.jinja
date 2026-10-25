@@ -1,41 +1,45 @@
 [versions]
 agp = "9.4.1"
 {%- if include_networking %}
-buildKonfig = "0.17.1"
+buildKonfig = "0.23.0"
 {%- endif %}
-android-compileSdk = "36"
+android-compileSdk = "37"
 android-minSdk = "24"
-android-targetSdk = "36"
-androidx-activityCompose = "1.11.0"
-androidx-lifecycle = "2.9.6"
-androidx-navigation = "2.9.1"
-compose-multiplatform = "1.9.3"
-kermit = "2.0.8"
-koin = "4.1.1"
-koinAnnotations = "2.3.1"
-kotlin = "2.2.21"
+android-targetSdk = "37"
+androidx-activityCompose = "1.13.0"
+androidx-lifecycle = "2.11.0"
+androidx-navigation = "2.10.0"
+compose-multiplatform = "1.12.2"
+# Compose Material3 is versioned separately from Compose Multiplatform.
+compose-material3 = "1.9.0"
+kermit = "2.2.0"
+koin = "4.2.2"
+koin-compiler-plugin = "1.2.1"
+# Newest Kotlin that the Koin compiler plugin and Mokkery are verified against.
+kotlin = "2.4.20"
 {%- if include_networking %}
-ktor = "3.3.2"
+ktor = "3.6.0"
 {%- endif %}
-kotlinxCoroutines = "1.10.2"
-kotlinxSerializationJson = "1.9.0"
+kotlinxCoroutines = "1.11.0"
+kotlinxSerializationJson = "1.12.0"
 {%- if include_bottom_nav %}
-# The version material3-adaptive-navigation-suite 1.9.0 (Compose 1.9.3) requires.
-material3Adaptive = "1.1.2"
+material3Adaptive = "1.3.0"
 # Material icons are frozen at 1.7.3 upstream.
 materialIcons = "1.7.3"
 {%- endif %}
-ksp = "2.3.3"
-mokkery = "3.0.0"
+{%- if include_persistence %}
+ksp = "2.3.12"
+{%- endif %}
+mokkery = "3.5.1"
 {%- if include_desktop and include_networking %}
-slf4j = "2.0.17"
+slf4j = "2.0.20"
 {%- endif %}
 {%- if include_sonar %}
 sonarqube = "7.5.0.8588"
 {%- endif %}
 {%- if include_persistence %}
-room = "2.8.3"
-sqlite = "2.6.1"
+room = "2.8.5"
+sqlite = "2.7.1"
 {%- endif %}
 
 [libraries]
@@ -43,6 +47,16 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-multiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
+{%- if include_bottom_nav %}
+compose-material3-adaptive-navigation-suite = { module = "org.jetbrains.compose.material3:material3-adaptive-navigation-suite", version.ref = "compose-material3" }
+{%- endif %}
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose-multiplatform" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose-multiplatform" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 {%- if include_persistence %}
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
@@ -51,12 +65,10 @@ sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sql
 {%- endif %}
 kermit = { module = "co.touchlab:kermit-core", version.ref = "kermit" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
-koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koinAnnotations" }
-koin-annotations-ksp = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koinAnnotations" }
+koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 {%- if include_desktop %}
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
 {%- endif %}
@@ -90,9 +102,12 @@ buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildKonfig"
 {%- endif %}
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-compiler-plugin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+{%- if include_persistence %}
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+{%- endif %}
 mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
 {%- if include_sonar %}
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
