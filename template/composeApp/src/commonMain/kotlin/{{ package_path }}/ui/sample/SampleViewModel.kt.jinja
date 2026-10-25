@@ -3,13 +3,12 @@ package {{ package_name }}.ui.sample
 import androidx.compose.runtime.Immutable
 import {{ package_name }}.base.BaseViewModel
 import {{ package_name }}.base.DispatchersProvider
-import {{ package_name }}.base.UnidirectionalViewModel
 import {{ package_name }}.base.error.AppError
 import {{ package_name }}.base.logger.{{ app_name }}Logger
 import {{ package_name }}.data.repository.SampleRepository
 import {{ package_name }}.data.repository.model.SampleItem
+import {{ package_name }}.ui.base.UnidirectionalViewModel
 import {{ package_name }}.ui.base.navigation.Navigator
-import {{ package_name }}.ui.main.MainRoute
 import {{ package_name }}.usecase.sample.AddSampleItemResult
 import {{ package_name }}.usecase.sample.AddSampleItemUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,7 +65,7 @@ class SampleViewModel(
                     events.send(event)
                 }
 
-            is SampleContract.Intent.OnItemSelected -> navigator.navigate(MainRoute.SampleDetail(intent.id))
+            is SampleContract.Intent.OnItemSelected -> navigator.navigate(SampleRoute.Detail(intent.id))
 
             SampleContract.Intent.OnRetry -> reloadTrigger.update { it + 1 }
         }

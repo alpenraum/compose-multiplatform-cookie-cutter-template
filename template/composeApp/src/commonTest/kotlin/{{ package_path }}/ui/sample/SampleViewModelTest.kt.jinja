@@ -18,7 +18,6 @@ import {{ package_name }}.base.logger.{{ app_name }}Logger
 import {{ package_name }}.data.repository.SampleRepository
 import {{ package_name }}.data.repository.model.SampleItem
 import {{ package_name }}.ui.base.navigation.Navigator
-import {{ package_name }}.ui.main.MainRoute
 import {{ package_name }}.usecase.sample.AddSampleItemUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -143,6 +142,6 @@ class SampleViewModelTest {
 
             viewModel.intent(SampleContract.Intent.OnItemSelected(1), navigator)
 
-            verify { navigator.navigate(MainRoute.SampleDetail(1)) }
+            verify { navigator.navigate(SampleRoute.Detail(1)) }
         }
 }

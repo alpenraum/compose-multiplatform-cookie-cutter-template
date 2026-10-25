@@ -1,0 +1,24 @@
+package {{ package_name }}.ui.settings
+
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.compose.composable
+import {{ package_name }}.ui.base.navigation.NavDestinationDefinition
+import {{ package_name }}.ui.base.navigation.NavGraphDefinition
+import kotlinx.serialization.Serializable
+import org.koin.core.annotation.Single
+
+@Single(binds = [NavGraphDefinition::class])
+class SettingsNavigationGraph : NavGraphDefinition {
+    override fun build(
+        navGraphBuilder: NavGraphBuilder,
+        navController: NavController,
+    ) {
+        navGraphBuilder.composable<SettingsRoute> {
+            SettingsFeature()
+        }
+    }
+}
+
+@Serializable
+data object SettingsRoute : NavDestinationDefinition

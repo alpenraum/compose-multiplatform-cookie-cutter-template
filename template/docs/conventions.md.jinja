@@ -5,6 +5,7 @@ replace it — contradictions are bugs.
 
 ## Layers
 
+- `konsistTest` enforces the layer imports and the ViewModel, use case and repository shapes below; a violation fails `./gradlew :konsistTest:test`.
 - Dependencies point inward: UI → ViewModel → use case → repository → DAO / HTTP client. Never the reverse.
 - UI holds no business logic. Repositories hold no business rules and return domain types, never DB entities or wire DTOs.
 - Business logic lives in use cases: one class, one job, a single `operator fun invoke`. Use cases never touch framework types (DAO, `HttpClient`, `NavController`).
@@ -24,10 +25,11 @@ replace it — contradictions are bugs.
 - `event` is backed by `Channel(Channel.BUFFERED).receiveAsFlow()` so events emitted while nothing collects are kept.
 - The ViewModel never stores a navigation handle; it navigates through the `Navigator` passed into `intent(intent, navigator)`.
 - Streams become state through `inViewModelScope(initial)` only.
-- Navigation graphs implement `NavGraphDefinition` and are registered with `@Single(binds = [NavGraphDefinition::class])`; routes are `@Serializable` and implement `NavDestinationDefinition`. There is one app-level graph.
+- Each feature declares its own `@Serializable` routes (implementing `NavDestinationDefinition`) and a `NavGraphDefinition` registered with `@Single(binds = [NavGraphDefinition::class])`. All graphs go into the one app-level `NavHost` in `ui/main`.
+- Features never import the app shell (`ui/main`, `ui/bottomnav`) or other features, except another feature's `*Route` types to navigate there; the shell composes features.
 - A screen without state or logic may skip the ViewModel and contract.
 {%- if include_bottom_nav %}
-- Tabs are top-level `MainRoute`s listed in `TopLevelDestination`; the bar shows only on them and every other screen covers it. Switch tabs with `navigateToTopLevel` (back returns to the first tab, then exits).
+- Tabs are feature start routes listed in `TopLevelDestination`; the bar shows only on them and every other screen covers it. Switch tabs with `navigateToTopLevel` (back returns to the first tab, then exits).
 {%- endif %}
 
 ## Concurrency

@@ -15,6 +15,8 @@ compose-material3 = "1.9.0"
 kermit = "2.2.0"
 koin = "4.2.2"
 koin-compiler-plugin = "1.2.1"
+# Konsist parses sources with its own Kotlin parser: check it supports new syntax when bumping kotlin.
+konsist = "0.18.1"
 # Newest Kotlin that the Koin compiler plugin and Mokkery are verified against.
 kotlin = "2.4.20"
 {%- if include_networking %}
@@ -69,6 +71,7 @@ koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 {%- if include_desktop %}
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
 {%- endif %}
@@ -103,6 +106,7 @@ buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildKonfig"
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-compiler-plugin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 {%- if include_persistence %}

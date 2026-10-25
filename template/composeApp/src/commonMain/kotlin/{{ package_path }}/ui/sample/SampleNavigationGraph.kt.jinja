@@ -1,0 +1,36 @@
+package {{ package_name }}.ui.sample
+
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
+import {{ package_name }}.ui.base.navigation.NavDestinationDefinition
+import {{ package_name }}.ui.base.navigation.NavGraphDefinition
+import kotlinx.serialization.Serializable
+import org.koin.core.annotation.Single
+
+@Single(binds = [NavGraphDefinition::class])
+class SampleNavigationGraph : NavGraphDefinition {
+    override fun build(
+        navGraphBuilder: NavGraphBuilder,
+        navController: NavController,
+    ) {
+        navGraphBuilder.composable<SampleRoute.List> {
+            SampleFeature(navController)
+        }
+        navGraphBuilder.composable<SampleRoute.Detail> { entry ->
+            SampleDetailFeature(navController, itemId = entry.toRoute<SampleRoute.Detail>().itemId)
+        }
+    }
+}
+
+@Serializable
+sealed interface SampleRoute : NavDestinationDefinition {
+    @Serializable
+    data object List : SampleRoute
+
+    @Serializable
+    data class Detail(
+        val itemId: Long,
+    ) : SampleRoute
+}

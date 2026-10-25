@@ -23,20 +23,22 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import {{ package_name }}.resources.Res
 import {{ package_name }}.resources.tab_items
 import {{ package_name }}.resources.tab_settings
+import {{ package_name }}.ui.base.navigation.NavDestinationDefinition
 import {{ package_name }}.ui.base.navigation.navigateToTopLevel
-import {{ package_name }}.ui.main.MainRoute
+import {{ package_name }}.ui.sample.SampleRoute
+import {{ package_name }}.ui.settings.SettingsRoute
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 // The bar shows only on these routes; every other screen covers it.
 enum class TopLevelDestination(
-    val route: MainRoute,
+    val route: NavDestinationDefinition,
     val label: StringResource,
     val icon: ImageVector,
     val selectedIcon: ImageVector,
 ) {
-    ITEMS(MainRoute.Home, Res.string.tab_items, Icons.AutoMirrored.Outlined.List, Icons.AutoMirrored.Filled.List),
-    SETTINGS(MainRoute.Settings, Res.string.tab_settings, Icons.Outlined.Settings, Icons.Filled.Settings),
+    ITEMS(SampleRoute.List, Res.string.tab_items, Icons.AutoMirrored.Outlined.List, Icons.AutoMirrored.Filled.List),
+    SETTINGS(SettingsRoute, Res.string.tab_settings, Icons.Outlined.Settings, Icons.Filled.Settings),
 }
 
 @Composable

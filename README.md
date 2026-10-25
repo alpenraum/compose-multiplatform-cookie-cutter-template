@@ -61,9 +61,8 @@ Android and iOS, with optional desktop.
 
 ### A template that you can test and update
 
-- CI makes six combinations of options. It builds each combination for Android and desktop. It builds
-  two combinations for iOS, with the Xcode project.
-- CI also tests `copier update` from the previous template version.
+- `ci/variants` has six sets of answers. Use them to make and build each combination of options on
+  your computer.
 - `copier update` gives your project the fixes that the template receives later. The files that you
   own stay as they are: `README.md`, `CLAUDE.md`, `docs/conventions.md` and `version.properties`.
 - `docs/conventions.md` gives the rules that the code obeys. `CLAUDE.md` gives AI coding tools the
@@ -112,7 +111,7 @@ Copier resolves to the newest tag instead.
 
 Always included: UDF architecture (`UnidirectionalViewModel`, `BaseViewModel` with an error
 boundary, `Navigator`), Koin with annotations, typed error pipeline (`AppError` → `ErrorLocalizer` →
-`ErrorView`), Kermit logging, a sample list + detail feature with Mokkery tests, `docs/conventions.md`,
+`ErrorView`), Kermit logging, a sample list + detail feature with Mokkery tests, Konsist architecture tests, `docs/conventions.md`,
 a `CLAUDE.md` skeleton and Dependabot.
 
 ## Updating projects generated before the androidApp split
@@ -131,11 +130,20 @@ Re-apply your edits from git history, and update the commands in your `README.md
 The Koin 4.2 upgrade also changes your own code: `@KoinViewModel` moves to `org.koin.core.annotation`,
 Koin starts with `startKoin<<App>Koin>`, and your own `@Module` classes go into `base/di/<App>Koin.kt`.
 
+The architecture tests (`konsistTest`) moved files and can fail on your existing code:
+
+- `UnidirectionalViewModel`, `use` and `CollectEvents` moved from `base` to `ui.base`; `ErrorLocalizer`
+  and `ErrorText` moved from `base.error` to `ui.base.error`.
+- `MainNavigationGraph` and `MainRoute` are gone. Each feature declares its own routes and
+  `NavGraphDefinition` (see `ui/sample/SampleNavigationGraph.kt`); move your routes there.
+- Run `./gradlew :konsistTest:test` and fix what it reports, or adjust the rules to your project.
+
 ## Developing the template
 
 Template sources live in `template/`; only `*.jinja` files are rendered, everything else is copied
 verbatim. Optional parts are excluded per answer through `_exclude` in `copier.yml`.
-`ci/variants/*.yml` are the answer sets CI generates and builds — adding a file adds a CI variant.
+`ci/variants/*.yml` are answer sets for generating and building each option combination locally;
+there is no hosted CI, so build the affected variants before you push.
 
 ```bash
 copier copy --defaults --vcs-ref HEAD --data-file ci/variants/defaults.yml "$PWD" /tmp/out

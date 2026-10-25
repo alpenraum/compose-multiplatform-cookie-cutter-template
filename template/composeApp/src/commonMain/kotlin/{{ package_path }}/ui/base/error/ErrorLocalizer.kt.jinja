@@ -1,5 +1,6 @@
-package {{ package_name }}.base.error
+package {{ package_name }}.ui.base.error
 
+import {{ package_name }}.base.error.AppError
 import {{ package_name }}.resources.Res
 {%- if include_networking %}
 import {{ package_name }}.resources.error_http_busy_message

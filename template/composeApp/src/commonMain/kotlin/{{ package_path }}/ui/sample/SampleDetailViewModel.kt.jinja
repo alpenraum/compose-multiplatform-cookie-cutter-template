@@ -3,11 +3,11 @@ package {{ package_name }}.ui.sample
 import androidx.compose.runtime.Immutable
 import {{ package_name }}.base.BaseViewModel
 import {{ package_name }}.base.DispatchersProvider
-import {{ package_name }}.base.UnidirectionalViewModel
 import {{ package_name }}.base.error.AppError
 import {{ package_name }}.base.logger.{{ app_name }}Logger
 import {{ package_name }}.data.repository.SampleRepository
 import {{ package_name }}.data.repository.model.SampleItem
+import {{ package_name }}.ui.base.UnidirectionalViewModel
 import {{ package_name }}.ui.base.navigation.Navigator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,8 +15,8 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class SampleDetailViewModel(

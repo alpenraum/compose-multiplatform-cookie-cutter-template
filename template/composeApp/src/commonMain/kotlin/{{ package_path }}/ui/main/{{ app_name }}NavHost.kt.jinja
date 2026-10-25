@@ -13,6 +13,7 @@ import {{ package_name }}.ui.base.navigation.navigateToTopLevel
 {%- if include_bottom_nav %}
 import {{ package_name }}.ui.bottomnav.TopLevelNavigationSuite
 {%- endif %}
+import {{ package_name }}.ui.sample.SampleRoute
 import org.koin.core.annotation.KoinViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -32,7 +33,7 @@ fun {{ app_name }}NavHost(
     TopLevelNavigationSuite(navController) {
         NavHost(
             navController = navController,
-            startDestination = MainRoute.Root,
+            startDestination = SampleRoute.List,
             modifier = modifier,
         ) {
             viewModel.navGraphs.forEach { it.build(navGraphBuilder = this, navController) }
@@ -41,7 +42,7 @@ fun {{ app_name }}NavHost(
 {%- else %}
     NavHost(
         navController = navController,
-        startDestination = MainRoute.Root,
+        startDestination = SampleRoute.List,
         modifier = modifier,
     ) {
         viewModel.navGraphs.forEach { it.build(navGraphBuilder = this, navController) }
@@ -51,7 +52,7 @@ fun {{ app_name }}NavHost(
     LaunchedEffect(Unit) {
         viewModel.deeplinkManager.navigationAction.collect { target ->
             when (target) {
-                NavigationTarget.HOME -> navController.navigateToTopLevel(MainRoute.Home)
+                NavigationTarget.HOME -> navController.navigateToTopLevel(SampleRoute.List)
             }
         }
     }

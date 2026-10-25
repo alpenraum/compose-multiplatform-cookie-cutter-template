@@ -1,0 +1,127 @@
+package {{ package_name }}.architecture
+
+import com.lemonappdev.konsist.api.Konsist
+import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
+import com.lemonappdev.konsist.api.ext.list.withPackage
+import com.lemonappdev.konsist.api.verify.assertFalse
+import com.lemonappdev.konsist.api.verify.assertTrue
+import kotlin.test.Test
+
+private const val ROOT = "{{ package_name }}"
+
+// ui.main and ui.bottomnav are the app shell: they compose features. Everything else under ui is a feature or ui.base.
+private val SHELL = setOf("base", "main", "bottomnav")
+
+// Parsed once: JUnit creates a new test class instance for every test.
+private val productionFiles =
+    Konsist
+        .scopeFromProject()
+        .files
+        .filterNot { it.sourceSetName.contains("test", ignoreCase = true) }
+
+// The first package segment below ui ("sample" for ui.sample.detail), or null outside ui.
+private fun uiSegment(name: String?) = name?.takeIf { it.startsWith("$ROOT.ui.") }?.removePrefix("$ROOT.ui.")?.substringBefore('.')
+
+private fun featureFiles() = productionFiles.filter { file -> uiSegment(file.packagee?.name)?.let { it !in SHELL } == true }
+
+// SampleRoute or SampleRoute.Detail: a feature may navigate to another feature's routes.
+private fun isRoute(importName: String) = importName.split('.').takeLast(2).any { it.endsWith("Route") }
+
+private fun importsAny(
+    imports: List<String>,
+    vararg prefixes: String,
+) = imports.any { name -> prefixes.any { name.startsWith("$ROOT.$it") } }
+
+class ArchitectureTest {
+    @Test
+    fun baseLayerImportsNoUiDataOrUseCases() {
+        // base.di is the composition root and may name data modules.
+        productionFiles
+            .withPackage("$ROOT.base..")
+            .filterNot { it.packagee?.name?.startsWith("$ROOT.base.di") == true }
+            .assertFalse { file -> importsAny(file.imports.map { it.name }, "ui.", "data.", "usecase.") }
+    }
+
+    @Test
+    fun dataLayerImportsNoUiOrUseCases() {
+        productionFiles
+            .withPackage("$ROOT.data..")
+            .assertFalse { file -> importsAny(file.imports.map { it.name }, "ui.", "usecase.") }
+    }
+
+    @Test
+    fun useCasesImportNoUiOrDataSources() {
+        productionFiles
+            .withPackage("$ROOT.usecase..")
+            .assertFalse { file -> importsAny(file.imports.map { it.name }, "ui.", "data.db.", "data.remote.", "base.network.") }
+    }
+
+    @Test
+    fun featuresImportNoOtherFeatureExceptItsRoutesAndNotTheShell() {
+        featureFiles().assertFalse { file ->
+            file.imports.any { import ->
+                val target = uiSegment(import.name)
+                target != null &&
+                    target != "base" &&
+                    target != uiSegment(file.packagee?.name) &&
+                    (target in SHELL || !isRoute(import.name))
+            }
+        }
+    }
+
+    @Test
+    fun featureViewModelsExtendBaseViewModelAndHaveAFeatureFile() {
+        val viewModels =
+            featureFiles()
+                .flatMap { it.classes() }
+                .withNameEndingWith("ViewModel")
+                .filterNot { it.hasAbstractModifier }
+        viewModels.assertTrue { it.hasParentWithName("BaseViewModel", indirectParents = true) }
+        viewModels.assertTrue { viewModel ->
+            val featureName = viewModel.name.removeSuffix("ViewModel") + "Feature"
+            productionFiles.any { it.packagee?.name == viewModel.packagee?.name && it.name == featureName }
+        }
+    }
+
+    @Test
+    fun useCasesHaveOneInvokeOperatorAsTheirOnlyPublicFunction() {
+        val useCases = productionFiles.withPackage("$ROOT.usecase..").flatMap { it.classes() }.withNameEndingWith("UseCase")
+        useCases.assertTrue { useCase ->
+            val public = useCase.functions(includeNested = false, includeLocal = false).filter { it.hasPublicOrDefaultModifier }
+            public.size == 1 && public.single().name == "invoke" && public.single().hasOperatorModifier
+        }
+    }
+
+    @Test
+    fun repositoriesExposeNoDatabaseOrWireTypes() {
+        val sourceTypes =
+            productionFiles
+                .withPackage("$ROOT.data.db..", "$ROOT.data.remote..")
+                .flatMap { it.classes() }
+                .map { it.name }
+                .toSet()
+        val repositoryFiles = productionFiles.withPackage("$ROOT.data.repository..")
+
+        // Only declared types are visible to a source parser; an inferred return type is not checked.
+        fun exposesSourceType(typeText: String?) = Regex("""\w+""").findAll(typeText.orEmpty()).any { it.value in sourceTypes }
+        repositoryFiles
+            .flatMap { it.functions(includeNested = true, includeLocal = false) }
+            .filter { it.hasPublicOrDefaultModifier }
+            .assertFalse { exposesSourceType(it.returnType?.text) }
+        repositoryFiles
+            .flatMap { it.properties(includeNested = true) }
+            .filter { it.hasPublicOrDefaultModifier }
+            .assertFalse { exposesSourceType(it.type?.text) }
+    }
+
+    @Test
+    fun dispatchersAreOnlyReferencedByTheDispatchersProvider() {
+        productionFiles
+            .filter { it.moduleName == "composeApp" }
+            .filterNot { file -> file.classes().any { it.name == "DefaultDispatchersProvider" } }
+            .assertFalse { file ->
+                file.imports.any { it.name.startsWith("kotlinx.coroutines.Dispatchers") } ||
+                    Regex("""\bkotlinx\.coroutines\.Dispatchers\b""").containsMatchIn(file.text)
+            }
+    }
+}

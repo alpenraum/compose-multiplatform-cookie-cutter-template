@@ -41,6 +41,12 @@ _message_after_update: |
     - Koin starts with `startKoin<<App>Koin>`; register your own `@Module` classes in `base/di/<App>Koin.kt`
       (the old `koinModules()` and `org.koin.ksp.generated.*` are gone).
     - `iosX64()` is gone: iOS simulators need an Apple Silicon Mac.
+  If your project predates the Konsist architecture tests, also check:
+    - `UnidirectionalViewModel`, `use`, `CollectEvents` moved from `base` to `ui.base`;
+      `ErrorLocalizer` and `ErrorText` moved from `base.error` to `ui.base.error`.
+    - `MainNavigationGraph`/`MainRoute` are gone: each feature declares its own routes and
+      NavGraphDefinition (see ui/sample/SampleNavigationGraph.kt).
+    - Run `./gradlew :konsistTest:test` and fix what it reports.
 
 _message_after_copy: |
   {{ app_display_name }} generated.
