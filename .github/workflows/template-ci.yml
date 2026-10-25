@@ -1,0 +1,88 @@
+name: template-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  COPIER_VERSION: "9.19.1"
+
+jobs:
+  variants:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: echo "list=$(ls ci/variants/*.yml | xargs -n1 basename | sed 's/\.yml$//' | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  android:
+    needs: variants
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ${{ fromJson(needs.variants.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pipx install "copier==$COPIER_VERSION"
+      - name: Generate
+        run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
+      - name: Build and test
+        working-directory: ${{ runner.temp }}/app
+        run: ./gradlew :composeApp:assembleDebug :composeApp:assembleRelease
+
+  ios:
+    needs: variants
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ${{ fromJson(needs.variants.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pipx install "copier==$COPIER_VERSION"
+      - name: Generate
+        run: copier copy --defaults --vcs-ref HEAD --data-file "ci/variants/${{ matrix.variant }}.yml" "$PWD" "$RUNNER_TEMP/app"
+      # No shared scheme is committed, hence -target.
+      - name: Build Xcode project
+        working-directory: ${{ runner.temp }}/app
+        run: |
+          xcodebuild -project iosApp/iosApp.xcodeproj -target iosApp \
+            -sdk iphonesimulator -arch arm64 -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build
+
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: pipx install "copier==$COPIER_VERSION"
+      - name: Update a project generated from the previous commit
+        run: |
+          if ! git rev-parse -q --verify HEAD~1 >/dev/null; then echo "no previous commit"; exit 0; fi
+          git config --global user.email ci@example.invalid
+          git config --global user.name ci
+          copier copy --defaults --vcs-ref HEAD~1 "$PWD" "$RUNNER_TEMP/app"
+          cd "$RUNNER_TEMP/app"
+          git init -q && git add -A && git commit -qm generated
+          copier update --defaults --vcs-ref HEAD
+          if grep -rIl --exclude-dir=.git '^<<<<<<< ' . ; then echo "conflict markers"; exit 1; fi
+          if find . -name '*.rej' | grep -q . ; then echo "rejected hunks"; exit 1; fi

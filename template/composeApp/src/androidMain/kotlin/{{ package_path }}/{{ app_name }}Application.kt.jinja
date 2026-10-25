@@ -1,0 +1,17 @@
+package {{ package_name }}
+
+import android.app.Application
+import {{ package_name }}.base.di.koinModules
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+
+class {{ app_name }}Application : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        startKoin {
+            androidContext(this@{{ app_name }}Application)
+            modules(koinModules())
+        }
+    }
+}

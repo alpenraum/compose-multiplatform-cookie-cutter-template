@@ -1,0 +1,132 @@
+_min_copier_version: "9.19.1"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+
+# Created once, then owned by the generated project: `copier update` never overwrites them.
+_skip_if_exists:
+  - README.md
+  - CLAUDE.md
+  - docs/conventions.md
+  - version.properties
+
+# Optional parts are plain directories in template/; they are dropped here, per option.
+_exclude: []
+
+_message_after_copy: |
+  {{ app_display_name }} generated.
+
+  Next steps:
+    1. git init && git add -A && git commit -m "generated from template"
+       (copier update needs a clean git repository)
+    2. iOS signing: create iosApp/Configuration/Local.xcconfig with `TEAM_ID=<your team id>`
+       (gitignored)
+    3. ./gradlew :composeApp:assembleDebug
+
+app_name:
+  type: str
+  help: App identifier in PascalCase (class names, iOS product name)
+  default: MyApp
+  validator: >-
+    {% if not (app_name | regex_search('^[A-Z][A-Za-z0-9]*$')) %}
+    Must be PascalCase: a capital letter followed by letters or digits.
+    {% endif %}
+
+app_display_name:
+  type: str
+  help: Name shown under the launcher icon / on the iOS home screen (spaces allowed)
+  default: "{{ app_name }}"
+  validator: >-
+    {% if not app_display_name.strip() or app_display_name[0] in '@?' %}
+    Must not be empty or start with @ or ?.
+    {% endif %}
+
+package_name:
+  type: str
+  help: Reverse-DNS package, Android application id and iOS bundle id
+  default: "com.alpenraum.{{ app_name | lower }}"
+  # Kotlin hard keywords + Java reserved words: neither may appear as a package segment.
+  validator: >-
+    {% set reserved = ['as', 'break', 'class', 'continue', 'do', 'else', 'false', 'for', 'fun',
+    'if', 'in', 'interface', 'is', 'null', 'object', 'package', 'return', 'super', 'this',
+    'throw', 'true', 'try', 'typealias', 'typeof', 'val', 'var', 'when', 'while', 'abstract',
+    'assert', 'boolean', 'byte', 'case', 'catch', 'char', 'const', 'default', 'double', 'enum',
+    'extends', 'final', 'finally', 'float', 'goto', 'implements', 'import', 'instanceof', 'int',
+    'long', 'native', 'new', 'private', 'protected', 'public', 'short', 'static', 'strictfp',
+    'switch', 'synchronized', 'throws', 'transient', 'void', 'volatile'] %}
+    {% if not (package_name | regex_search('^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$')) %}
+    Must be a reverse-DNS name like com.example.app (lowercase segments, at least two).
+    {% elif package_name.split('.') | select('in', reserved) | list %}
+    Segment(s) {{ package_name.split('.') | select('in', reserved) | join(', ') }} are reserved
+    words in Kotlin/Java.
+    {% endif %}
+
+author:
+  type: str
+  help: Author / copyright holder
+  default: alpenraum
+
+include_persistence:
+  type: bool
+  help: Room database + DataStore preferences
+  default: true
+
+include_networking:
+  type: bool
+  help: Ktor HTTP client + BuildKonfig base URL flavors
+  default: true
+
+include_bottom_nav:
+  type: bool
+  help: Adaptive bottom navigation (rail on wide screens); off = single start screen
+  default: true
+
+include_theme_components:
+  type: bool
+  help: Material3 app theme (light/dark), extended colours, font and generic component set
+  default: true
+
+include_desktop:
+  type: bool
+  help: JVM desktop target in addition to Android and iOS
+  default: false
+
+include_library_module:
+  type: bool
+  help: An empty Kotlin Multiplatform library module
+  default: false
+
+library_module_name:
+  type: str
+  help: Gradle name of the library module
+  default: core
+  when: "{{ include_library_module }}"
+  validator: >-
+    {% if not (library_module_name | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Lowercase letters, digits and dashes only.
+    {% endif %}
+
+include_sonar:
+  type: bool
+  help: SonarQube Gradle plugin + scan script
+  default: false
+
+sonar_host_url:
+  type: str
+  help: SonarQube server URL
+  when: "{{ include_sonar }}"
+  validator: >-
+    {% if not (sonar_host_url | regex_search('^https?://')) %}
+    Must start with http:// or https://
+    {% endif %}
+
+sonar_project_key:
+  type: str
+  help: SonarQube project key
+  default: "{{ app_name | lower }}"
+  when: "{{ include_sonar }}"
+
+package_path:
+  type: str
+  default: "{{ package_name | replace('.', '/') }}"
+  when: false
