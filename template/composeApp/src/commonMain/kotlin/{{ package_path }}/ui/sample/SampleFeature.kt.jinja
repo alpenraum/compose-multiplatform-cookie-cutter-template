@@ -1,0 +1,149 @@
+package {{ package_name }}.ui.sample
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import {{ package_name }}.base.CollectEvents
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.use
+import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.sample_add
+import {{ package_name }}.resources.sample_empty
+import {{ package_name }}.resources.sample_input_label
+import {{ package_name }}.resources.sample_title_blank
+import {{ package_name }}.resources.sample_title_too_long
+import {{ package_name }}.ui.base.error.ErrorDialog
+import {{ package_name }}.ui.base.error.ErrorView
+import {{ package_name }}.ui.base.error.showError
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+
+private data class TitleError(
+    val message: StringResource,
+    val maxLength: Int? = null,
+)
+
+@Composable
+fun SampleFeature(
+    navController: NavController,
+    viewModel: SampleViewModel = koinViewModel(),
+) {
+    val (state, dispatch, events) = use(viewModel, navController)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var title by rememberSaveable { mutableStateOf("") }
+    var titleError by remember { mutableStateOf<TitleError?>(null) }
+    var errorDetails by remember { mutableStateOf<AppError?>(null) }
+
+    CollectEvents(events) { event ->
+        when (event) {
+            SampleContract.Event.ItemAdded -> title = ""
+            SampleContract.Event.TitleBlank -> titleError = TitleError(Res.string.sample_title_blank)
+            is SampleContract.Event.TitleTooLong -> titleError = TitleError(Res.string.sample_title_too_long, event.maxLength)
+            // Launched: showSnackbar suspends until dismissed and would hold back every later event.
+            is SampleContract.Event.ShowError ->
+                scope.launch { if (snackbarHostState.showError(event.error)) errorDetails = event.error }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
+    ) { padding ->
+        Column(
+            modifier = Modifier.padding(padding).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        titleError = null
+                    },
+                    label = { Text(stringResource(Res.string.sample_input_label)) },
+                    isError = titleError != null,
+                    supportingText = titleError?.let { error -> { Text(error.text()) } },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                Button(onClick = { dispatch(SampleContract.Intent.OnAddItem(title)) }) {
+                    Text(stringResource(Res.string.sample_add))
+                }
+            }
+            SampleContent(
+                state = state,
+                onItemSelected = { dispatch(SampleContract.Intent.OnItemSelected(it)) },
+                onRetry = { dispatch(SampleContract.Intent.OnRetry) },
+            )
+        }
+    }
+
+    errorDetails?.let { ErrorDialog(error = it, onDismiss = { errorDetails = null }) }
+}
+
+@Composable
+private fun TitleError.text(): String = if (maxLength == null) stringResource(message) else stringResource(message, maxLength)
+
+@Composable
+private fun SampleContent(
+    state: SampleContract.State,
+    onItemSelected: (Long) -> Unit,
+    onRetry: () -> Unit,
+) {
+    when (state) {
+        SampleContract.State.Loading ->
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+
+        SampleContract.State.Empty ->
+            Text(stringResource(Res.string.sample_empty))
+
+        is SampleContract.State.Loaded ->
+            LazyColumn(Modifier.fillMaxWidth()) {
+                items(state.items, key = { it.id }) { item ->
+                    ListItem(
+                        headlineContent = { Text(item.title) },
+                        modifier = Modifier.clickable { onItemSelected(item.id) },
+                    )
+                }
+            }
+
+        is SampleContract.State.Failed ->
+            ErrorView(error = state.error, onRetry = onRetry, modifier = Modifier.fillMaxWidth())
+    }
+}

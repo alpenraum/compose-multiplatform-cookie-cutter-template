@@ -12,7 +12,8 @@ interface DispatchersProvider {
 
 @Single
 class DefaultDispatchersProvider : DispatchersProvider {
-    override val io: CoroutineDispatcher = Dispatchers.IO
+    override val io: CoroutineDispatcher get() = Dispatchers.IO
 
-    override val main: CoroutineDispatcher = Dispatchers.Main.immediate
+    // Resolved on use: Main does not exist in JVM unit tests until a test installs one.
+    override val main: CoroutineDispatcher get() = Dispatchers.Main.immediate
 }

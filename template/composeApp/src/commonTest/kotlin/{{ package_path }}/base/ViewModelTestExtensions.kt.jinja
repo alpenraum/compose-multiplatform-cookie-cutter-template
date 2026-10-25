@@ -1,0 +1,10 @@
+package {{ package_name }}.base
+
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+
+// inViewModelScope only runs upstream while someone collects.
+fun <T> TestScope.collectInBackground(state: StateFlow<T>) {
+    backgroundScope.launch { state.collect {} }
+}

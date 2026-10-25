@@ -1,0 +1,121 @@
+package {{ package_name }}.ui.sample
+
+import androidx.compose.runtime.Immutable
+import {{ package_name }}.base.BaseViewModel
+import {{ package_name }}.base.DispatchersProvider
+import {{ package_name }}.base.UnidirectionalViewModel
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import {{ package_name }}.data.repository.SampleRepository
+import {{ package_name }}.data.repository.model.SampleItem
+import {{ package_name }}.ui.base.navigation.Navigator
+import {{ package_name }}.ui.main.MainRoute
+import {{ package_name }}.usecase.sample.AddSampleItemResult
+import {{ package_name }}.usecase.sample.AddSampleItemUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import org.koin.android.annotation.KoinViewModel
+
+@KoinViewModel
+class SampleViewModel(
+    sampleRepository: SampleRepository,
+    private val addSampleItem: AddSampleItemUseCase,
+    dispatchersProvider: DispatchersProvider,
+    logger: {{ app_name }}Logger,
+) : BaseViewModel(dispatchersProvider, logger),
+    SampleContract {
+    private val reloadTrigger = MutableStateFlow(0)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val state: StateFlow<SampleContract.State> =
+        reloadTrigger
+            .flatMapLatest {
+                // flow { } also turns a throw while building the stream into a failure state.
+                flow { emitAll(sampleRepository.observeItems()) }
+                    .map { items -> if (items.isEmpty()) SampleContract.State.Empty else SampleContract.State.Loaded(items) }
+                    .onStart<SampleContract.State> { emit(SampleContract.State.Loading) }
+                    .catchAsState(SampleContract.State::Failed)
+            }.inViewModelScope(SampleContract.State.Loading)
+
+    private val events = Channel<SampleContract.Event>(Channel.BUFFERED)
+    override val event: Flow<SampleContract.Event> = events.receiveAsFlow()
+
+    override fun intent(
+        intent: SampleContract.Intent,
+        navigator: Navigator,
+    ) {
+        when (intent) {
+            is SampleContract.Intent.OnAddItem ->
+                launch {
+                    val event =
+                        when (val result = addSampleItem(intent.title)) {
+                            AddSampleItemResult.Added -> SampleContract.Event.ItemAdded
+                            AddSampleItemResult.Rejected.Blank -> SampleContract.Event.TitleBlank
+                            is AddSampleItemResult.Rejected.TooLong -> SampleContract.Event.TitleTooLong(result.maxLength)
+                        }
+                    events.send(event)
+                }
+
+            is SampleContract.Intent.OnItemSelected -> navigator.navigate(MainRoute.SampleDetail(intent.id))
+
+            SampleContract.Intent.OnRetry -> reloadTrigger.update { it + 1 }
+        }
+    }
+
+    override fun onError(error: AppError) {
+        events.trySend(SampleContract.Event.ShowError(error))
+    }
+}
+
+interface SampleContract : UnidirectionalViewModel<SampleContract.State, SampleContract.Intent, SampleContract.Event> {
+    @Immutable
+    sealed interface State {
+        data object Loading : State
+
+        data object Empty : State
+
+        data class Loaded(
+            val items: List<SampleItem>,
+        ) : State
+
+        data class Failed(
+            val error: AppError,
+        ) : State
+    }
+
+    sealed interface Intent {
+        data class OnAddItem(
+            val title: String,
+        ) : Intent
+
+        data class OnItemSelected(
+            val id: Long,
+        ) : Intent
+
+        data object OnRetry : Intent
+    }
+
+    sealed interface Event {
+        data object ItemAdded : Event
+
+        data object TitleBlank : Event
+
+        data class TitleTooLong(
+            val maxLength: Int,
+        ) : Event
+
+        data class ShowError(
+            val error: AppError,
+        ) : Event
+    }
+}

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import {{ package_name }}.base.error.AppError
 import {{ package_name }}.base.error.ErrorLocalizer
 import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.action_close
 import {{ package_name }}.resources.action_retry
 import {{ package_name }}.resources.error_hide_details
 import {{ package_name }}.resources.error_show_details
@@ -30,16 +32,17 @@ fun ErrorView(
     error: AppError,
     modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null,
+    detailsInitiallyVisible: Boolean = false,
 ) {
     val text = ErrorLocalizer.localize(error)
-    var showDetails by rememberSaveable { mutableStateOf(false) }
+    var showDetails by rememberSaveable { mutableStateOf(detailsInitiallyVisible) }
 
     Column(
         modifier = modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(stringResource(text.message, *text.messageArgs.toTypedArray()), style = MaterialTheme.typography.titleMedium)
+        Text(text.messageText(), style = MaterialTheme.typography.titleMedium)
         text.action?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
         onRetry?.let {
             Button(onClick = it) { Text(stringResource(Res.string.action_retry)) }
@@ -57,4 +60,16 @@ fun ErrorView(
             }
         }
     }
+}
+
+@Composable
+fun ErrorDialog(
+    error: AppError,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_close)) } },
+        text = { ErrorView(error = error, detailsInitiallyVisible = true) },
+    )
 }

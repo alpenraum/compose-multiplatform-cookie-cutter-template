@@ -1,0 +1,22 @@
+package {{ package_name }}.data.repository
+
+import {{ package_name }}.data.repository.model.SampleItem
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import org.koin.core.annotation.Single
+
+@Single(binds = [SampleRepository::class])
+class InMemorySampleRepository : SampleRepository {
+    private val items = MutableStateFlow(emptyList<SampleItem>())
+
+    override fun observeItems(): Flow<List<SampleItem>> = items.asStateFlow()
+
+    override fun observeItem(id: Long): Flow<SampleItem?> = items.map { list -> list.find { it.id == id } }
+
+    override suspend fun addItem(title: String) {
+        items.update { current -> current + SampleItem(id = (current.maxOfOrNull { it.id } ?: 0) + 1, title = title) }
+    }
+}

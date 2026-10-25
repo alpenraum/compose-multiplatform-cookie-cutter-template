@@ -1,0 +1,10 @@
+package {{ package_name }}.base
+
+import kotlinx.coroutines.CoroutineDispatcher
+
+class TestDispatchersProvider(
+    dispatcher: CoroutineDispatcher,
+) : DispatchersProvider {
+    override val io: CoroutineDispatcher = dispatcher
+    override val main: CoroutineDispatcher = dispatcher
+}

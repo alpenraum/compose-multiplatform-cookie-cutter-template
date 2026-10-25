@@ -1,0 +1,47 @@
+package {{ package_name }}.ui.sample
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import {{ package_name }}.base.use
+import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.action_back
+import {{ package_name }}.resources.sample_detail_missing
+import {{ package_name }}.ui.base.error.ErrorView
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+
+@Composable
+fun SampleDetailFeature(
+    navController: NavController,
+    itemId: Long,
+    viewModel: SampleDetailViewModel = koinViewModel { parametersOf(itemId) },
+) {
+    val (state, dispatch) = use(viewModel, navController)
+
+    Column(
+        modifier = Modifier.safeDrawingPadding().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        TextButton(onClick = { dispatch(SampleDetailContract.Intent.OnBack) }) {
+            Text(stringResource(Res.string.action_back))
+        }
+        when (state) {
+            SampleDetailContract.State.Loading -> CircularProgressIndicator()
+            SampleDetailContract.State.Missing -> Text(stringResource(Res.string.sample_detail_missing))
+            is SampleDetailContract.State.Loaded -> Text(state.item.title, style = MaterialTheme.typography.headlineMedium)
+            is SampleDetailContract.State.Failed -> ErrorView(error = state.error, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}

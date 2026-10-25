@@ -1,0 +1,37 @@
+package {{ package_name }}.usecase.sample
+
+import {{ package_name }}.data.repository.SampleRepository
+import org.koin.core.annotation.Factory
+
+@Factory
+class AddSampleItemUseCase(
+    private val sampleRepository: SampleRepository,
+) {
+    suspend operator fun invoke(title: String): AddSampleItemResult {
+        val trimmed = title.trim()
+        return when {
+            trimmed.isEmpty() -> AddSampleItemResult.Rejected.Blank
+            trimmed.length > MAX_TITLE_LENGTH -> AddSampleItemResult.Rejected.TooLong(MAX_TITLE_LENGTH)
+            else -> {
+                sampleRepository.addItem(trimmed)
+                AddSampleItemResult.Added
+            }
+        }
+    }
+
+    companion object {
+        const val MAX_TITLE_LENGTH = 50
+    }
+}
+
+sealed interface AddSampleItemResult {
+    data object Added : AddSampleItemResult
+
+    sealed interface Rejected : AddSampleItemResult {
+        data object Blank : Rejected
+
+        data class TooLong(
+            val maxLength: Int,
+        ) : Rejected
+    }
+}

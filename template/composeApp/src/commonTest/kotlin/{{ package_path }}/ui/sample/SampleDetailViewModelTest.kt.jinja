@@ -1,0 +1,70 @@
+package {{ package_name }}.ui.sample
+
+import co.touchlab.kermit.CommonWriter
+import co.touchlab.kermit.loggerConfigInit
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.mock
+import dev.mokkery.verify
+import {{ package_name }}.base.TestDispatchersProvider
+import {{ package_name }}.base.collectInBackground
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import {{ package_name }}.data.repository.SampleRepository
+import {{ package_name }}.data.repository.model.SampleItem
+import {{ package_name }}.ui.base.navigation.Navigator
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class SampleDetailViewModelTest {
+    private val repository = mock<SampleRepository>()
+
+    private fun TestScope.createViewModel(itemId: Long): SampleDetailViewModel =
+        SampleDetailViewModel(
+            itemId = itemId,
+            sampleRepository = repository,
+            dispatchersProvider = TestDispatchersProvider(StandardTestDispatcher(testScheduler)),
+            logger = {{ app_name }}Logger(loggerConfigInit(CommonWriter())),
+        ).also { collectInBackground(it.state) }
+
+    @Test
+    fun existingItemIsLoaded() =
+        runTest {
+            val item = SampleItem(7, "Milk")
+            every { repository.observeItem(7) } returns flowOf(item)
+
+            val viewModel = createViewModel(7)
+            advanceUntilIdle()
+
+            assertEquals(SampleDetailContract.State.Loaded(item), viewModel.state.value)
+        }
+
+    @Test
+    fun deletedItemIsReportedAsMissing() =
+        runTest {
+            every { repository.observeItem(7) } returns flowOf(null)
+
+            val viewModel = createViewModel(7)
+            advanceUntilIdle()
+
+            assertEquals(SampleDetailContract.State.Missing, viewModel.state.value)
+        }
+
+    @Test
+    fun backNavigatesBack() =
+        runTest {
+            every { repository.observeItem(7) } returns flowOf(null)
+            val navigator =
+                mock<Navigator> {
+                    every { navigateBack() } returns Unit
+                }
+
+            createViewModel(7).intent(SampleDetailContract.Intent.OnBack, navigator)
+
+            verify { navigator.navigateBack() }
+        }
+}

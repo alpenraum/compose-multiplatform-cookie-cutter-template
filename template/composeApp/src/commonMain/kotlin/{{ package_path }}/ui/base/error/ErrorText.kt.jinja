@@ -1,0 +1,31 @@
+package {{ package_name }}.ui.base.error
+
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.Composable
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.error.ErrorLocalizer
+import {{ package_name }}.base.error.ErrorText
+import {{ package_name }}.resources.Res
+import {{ package_name }}.resources.error_show_details
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+
+@Composable
+fun ErrorText.messageText(): String = stringResource(message, *messageArgs.toTypedArray())
+
+suspend fun ErrorText.resolveMessage(): String = getString(message, *messageArgs.toTypedArray())
+
+// Command failures: message + action as a snackbar; returns true when the user asked for the details.
+suspend fun SnackbarHostState.showError(error: AppError): Boolean {
+    val text = ErrorLocalizer.localize(error)
+    val message = listOfNotNull(text.resolveMessage(), text.action?.let { getString(it) }).joinToString(" ")
+    val result =
+        showSnackbar(
+            message = message,
+            actionLabel = getString(Res.string.error_show_details),
+            duration = SnackbarDuration.Long,
+        )
+    return result == SnackbarResult.ActionPerformed
+}

@@ -1,0 +1,69 @@
+package {{ package_name }}.ui.sample
+
+import androidx.compose.runtime.Immutable
+import {{ package_name }}.base.BaseViewModel
+import {{ package_name }}.base.DispatchersProvider
+import {{ package_name }}.base.UnidirectionalViewModel
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import {{ package_name }}.data.repository.SampleRepository
+import {{ package_name }}.data.repository.model.SampleItem
+import {{ package_name }}.ui.base.navigation.Navigator
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
+
+@KoinViewModel
+class SampleDetailViewModel(
+    @InjectedParam itemId: Long,
+    sampleRepository: SampleRepository,
+    dispatchersProvider: DispatchersProvider,
+    logger: {{ app_name }}Logger,
+) : BaseViewModel(dispatchersProvider, logger),
+    SampleDetailContract {
+    override val state: StateFlow<SampleDetailContract.State> =
+        flow { emitAll(sampleRepository.observeItem(itemId)) }
+            .map { item -> item?.let(SampleDetailContract.State::Loaded) ?: SampleDetailContract.State.Missing }
+            .catchAsState(SampleDetailContract.State::Failed)
+            .inViewModelScope(SampleDetailContract.State.Loading)
+
+    override val event: Flow<Nothing> = emptyFlow()
+
+    override fun intent(
+        intent: SampleDetailContract.Intent,
+        navigator: Navigator,
+    ) {
+        when (intent) {
+            SampleDetailContract.Intent.OnBack -> navigator.navigateBack()
+        }
+    }
+
+    // No intent launches work here, so there is nothing to report.
+    override fun onError(error: AppError) = Unit
+}
+
+interface SampleDetailContract : UnidirectionalViewModel<SampleDetailContract.State, SampleDetailContract.Intent, Nothing> {
+    @Immutable
+    sealed interface State {
+        data object Loading : State
+
+        data object Missing : State
+
+        data class Loaded(
+            val item: SampleItem,
+        ) : State
+
+        data class Failed(
+            val error: AppError,
+        ) : State
+    }
+
+    sealed interface Intent {
+        data object OnBack : Intent
+    }
+}

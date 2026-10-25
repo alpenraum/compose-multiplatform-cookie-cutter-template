@@ -17,6 +17,9 @@ replace it — contradictions are bugs.
 - Every screen has a contract `XContract : UnidirectionalViewModel<State, Intent, Event>` declaring `State`, `Intent` and `Event` inside it.
 - `State` is a sealed hierarchy, one variant per real screen condition — no bag of nullable fields and booleans.
 - Screens bind through `use(viewModel, navController)`, only ever call `dispatch(intent)`, and receive one-shot events through `CollectEvents`.
+- Ephemeral input (a text field's draft) lives in the Feature and reaches the ViewModel only through an Intent.
+- Non-error feedback is a typed Event owned by the contract; the Feature resolves its text. Use-case result types never reach the UI.
+- Navigation arguments reach a ViewModel as an `@InjectedParam` constructor parameter (`koinViewModel { parametersOf(id) }`).
 - `event` is backed by `Channel(Channel.BUFFERED).receiveAsFlow()` so events emitted while nothing collects are kept.
 - The ViewModel never stores a navigation handle; it navigates through the `Navigator` passed into `intent(intent, navigator)`.
 - Streams become state through `inViewModelScope(initial)` only.
@@ -25,14 +28,15 @@ replace it — contradictions are bugs.
 ## Concurrency
 
 - Dispatchers come from the injected `DispatchersProvider`; never reference `Dispatchers.*` outside `DefaultDispatchersProvider`.
-- ViewModels start work with `BaseViewModel.launch`, which runs in `viewModelScope` on the injected main dispatcher. Repositories switch to `dispatchersProvider.io` themselves (main-safe).
+- ViewModels start work with `BaseViewModel.launch`, which runs in `viewModelScope` on the injected main dispatcher.
+- Repositories are main-safe: a blocking call inside one switches to `dispatchersProvider.io`.
 
 ## Errors
 
 - Every failure is a typed `AppError`. No strings, booleans or nulls as error signals.
 - Library exceptions (SQL, HTTP, filesystem) are converted at the boundary that produced them and thrown as `AppException`.
-- `BaseViewModel.launch` is the catch site for commands: it logs, converts with `toAppError()` and calls `onError`. A failing `Flow` that feeds state is caught with `.catch { }` and becomes a failure `State` variant.
-- User-facing text comes only from `ErrorLocalizer`; screens show failures with `ErrorView`, which keeps the technical detail as a separate selectable block.
+- `BaseViewModel.launch` is the catch site for commands: it logs, converts with `toAppError()` and calls `onError`. A failing `Flow` that feeds state goes through `catchAsState { }` and becomes a failure `State` variant.
+- User-facing text comes only from `ErrorLocalizer`. A failure *state* renders `ErrorView`; a failed *command* shows `SnackbarHostState.showError` (message + action) whose Details action opens `ErrorDialog`. Both keep the technical detail as a separate selectable block.
 - `technicalDetail` holds structured facts (error type, status, code) — never stack traces, URLs, tokens or payloads. Full traces go to the logger.
 - Never "Something went wrong": every message says what happened and, where possible, what the user can do.
 - No empty catch and no catch-log-continue without an explicit decision about the failed operation. `CancellationException` is always rethrown.
@@ -49,7 +53,8 @@ replace it — contradictions are bugs.
 
 ## Testing
 
-- Tests live in `commonTest`.
+- Tests live in `commonTest` and mock with Mokkery (interfaces only — a class that needs mocking gets an interface).
+- ViewModel tests inject `TestDispatchersProvider` with a `StandardTestDispatcher`, collect state with `collectInBackground`, and verify navigation on a `Navigator` mock. Test doubles never live in `commonMain`.
 - Each test names the behaviour it protects. No tests asserting that the language or a framework works.
 - No test depends on wall-clock time, real network or real hardware.
 

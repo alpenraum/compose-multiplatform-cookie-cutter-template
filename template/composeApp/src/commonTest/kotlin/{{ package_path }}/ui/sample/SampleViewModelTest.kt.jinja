@@ -1,0 +1,146 @@
+package {{ package_name }}.ui.sample
+
+import co.touchlab.kermit.CommonWriter
+import co.touchlab.kermit.loggerConfigInit
+import dev.mokkery.answering.returns
+import dev.mokkery.answering.sequentially
+import dev.mokkery.answering.throws
+import dev.mokkery.every
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.mock
+import dev.mokkery.verify
+import dev.mokkery.verifySuspend
+import {{ package_name }}.base.TestDispatchersProvider
+import {{ package_name }}.base.collectInBackground
+import {{ package_name }}.base.error.AppError
+import {{ package_name }}.base.logger.{{ app_name }}Logger
+import {{ package_name }}.data.repository.SampleRepository
+import {{ package_name }}.data.repository.model.SampleItem
+import {{ package_name }}.ui.base.navigation.Navigator
+import {{ package_name }}.ui.main.MainRoute
+import {{ package_name }}.usecase.sample.AddSampleItemUseCase
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+
+class SampleViewModelTest {
+    private val navigator =
+        mock<Navigator> {
+            every { navigate(any()) } returns Unit
+        }
+    private val repository = mock<SampleRepository>()
+    private val items = listOf(SampleItem(1, "Milk"))
+
+    private fun TestScope.createViewModel(): SampleViewModel =
+        SampleViewModel(
+            sampleRepository = repository,
+            addSampleItem = AddSampleItemUseCase(repository),
+            dispatchersProvider = TestDispatchersProvider(StandardTestDispatcher(testScheduler)),
+            logger = {{ app_name }}Logger(loggerConfigInit(CommonWriter())),
+        ).also { collectInBackground(it.state) }
+
+    @Test
+    fun repositoryItemsBecomeLoadedState() =
+        runTest {
+            every { repository.observeItems() } returns flowOf(items)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(SampleContract.State.Loaded(items), viewModel.state.value)
+        }
+
+    @Test
+    fun noItemsBecomeEmptyState() =
+        runTest {
+            every { repository.observeItems() } returns flowOf(emptyList())
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(SampleContract.State.Empty, viewModel.state.value)
+        }
+
+    @Test
+    fun failingStreamBecomesFailedStateAndRetryReloads() =
+        runTest {
+            every { repository.observeItems() } sequentially {
+                returns(flow { throw IllegalStateException("database closed") })
+                returns(
+                    flow {
+                        delay(1_000)
+                        emit(items)
+                    },
+                )
+            }
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            assertIs<SampleContract.State.Failed>(viewModel.state.value)
+
+            viewModel.intent(SampleContract.Intent.OnRetry, navigator)
+            runCurrent()
+            assertEquals(SampleContract.State.Loading, viewModel.state.value)
+
+            advanceUntilIdle()
+            assertEquals(SampleContract.State.Loaded(items), viewModel.state.value)
+        }
+
+    @Test
+    fun validTitleIsSavedAndReportedAsItemAdded() =
+        runTest {
+            every { repository.observeItems() } returns flowOf(emptyList())
+            everySuspend { repository.addItem(any()) } returns Unit
+            val viewModel = createViewModel()
+
+            viewModel.intent(SampleContract.Intent.OnAddItem("Milk"), navigator)
+
+            assertEquals(SampleContract.Event.ItemAdded, viewModel.event.first())
+            verifySuspend { repository.addItem("Milk") }
+        }
+
+    @Test
+    fun blankTitleIsReportedAsEvent() =
+        runTest {
+            every { repository.observeItems() } returns flowOf(emptyList())
+            val viewModel = createViewModel()
+
+            viewModel.intent(SampleContract.Intent.OnAddItem(" "), navigator)
+
+            assertEquals(SampleContract.Event.TitleBlank, viewModel.event.first())
+        }
+
+    @Test
+    fun failedSaveIsReportedAsErrorEvent() =
+        runTest {
+            every { repository.observeItems() } returns flowOf(emptyList())
+            everySuspend { repository.addItem(any()) } throws IllegalStateException("disk full")
+            val viewModel = createViewModel()
+
+            viewModel.intent(SampleContract.Intent.OnAddItem("Milk"), navigator)
+
+            val event = viewModel.event.first()
+            assertIs<SampleContract.Event.ShowError>(event)
+            assertIs<AppError.Unexpected>(event.error)
+        }
+
+    @Test
+    fun selectingAnItemNavigatesToItsDetail() =
+        runTest {
+            every { repository.observeItems() } returns flowOf(items)
+            val viewModel = createViewModel()
+
+            viewModel.intent(SampleContract.Intent.OnItemSelected(1), navigator)
+
+            verify { navigator.navigate(MainRoute.SampleDetail(1)) }
+        }
+}

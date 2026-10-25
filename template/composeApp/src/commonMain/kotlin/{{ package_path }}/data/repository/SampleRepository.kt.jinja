@@ -1,0 +1,12 @@
+package {{ package_name }}.data.repository
+
+import {{ package_name }}.data.repository.model.SampleItem
+import kotlinx.coroutines.flow.Flow
+
+interface SampleRepository {
+    fun observeItems(): Flow<List<SampleItem>>
+
+    fun observeItem(id: Long): Flow<SampleItem?>
+
+    suspend fun addItem(title: String)
+}

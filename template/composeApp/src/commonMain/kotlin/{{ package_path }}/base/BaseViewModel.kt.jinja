@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -32,6 +33,14 @@ abstract class BaseViewModel(
                 logger.e(exception) { "Unhandled failure: $error" }
                 onError(error)
             }
+        }
+
+    // The stream counterpart of launch: a failing stream that feeds state becomes a failure state.
+    protected fun <T> Flow<T>.catchAsState(onFailure: (AppError) -> T): Flow<T> =
+        catch { exception ->
+            val error = exception.toAppError()
+            logger.e(exception) { "Stream failed: $error" }
+            emit(onFailure(error))
         }
 
     protected fun <T> Flow<T>.inViewModelScope(initialValue: T): StateFlow<T> =

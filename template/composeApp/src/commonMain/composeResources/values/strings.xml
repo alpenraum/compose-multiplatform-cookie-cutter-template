@@ -5,4 +5,13 @@
     <string name="error_show_details">Show details</string>
     <string name="error_hide_details">Hide details</string>
     <string name="action_retry">Retry</string>
+    <string name="action_close">Close</string>
+    <string name="action_back">Back</string>
+
+    <string name="sample_input_label">New item</string>
+    <string name="sample_add">Add</string>
+    <string name="sample_empty">No items yet. Add your first one above.</string>
+    <string name="sample_title_blank">Enter a title first.</string>
+    <string name="sample_title_too_long">Titles can have at most %1$d characters.</string>
+    <string name="sample_detail_missing">This item no longer exists.</string>
 </resources>

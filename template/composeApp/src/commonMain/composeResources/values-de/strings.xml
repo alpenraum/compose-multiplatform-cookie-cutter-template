@@ -5,4 +5,13 @@
     <string name="error_show_details">Details anzeigen</string>
     <string name="error_hide_details">Details ausblenden</string>
     <string name="action_retry">Erneut versuchen</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_back">Zurück</string>
+
+    <string name="sample_input_label">Neuer Eintrag</string>
+    <string name="sample_add">Hinzufügen</string>
+    <string name="sample_empty">Noch keine Einträge. Füge oben den ersten hinzu.</string>
+    <string name="sample_title_blank">Gib zuerst einen Titel ein.</string>
+    <string name="sample_title_too_long">Titel dürfen höchstens %1$d Zeichen lang sein.</string>
+    <string name="sample_detail_missing">Dieser Eintrag existiert nicht mehr.</string>
 </resources>

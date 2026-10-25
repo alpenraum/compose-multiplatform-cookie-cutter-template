@@ -1,0 +1,66 @@
+package {{ package_name }}.usecase.sample
+
+import dev.mokkery.answering.returns
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.mock
+import dev.mokkery.verify.VerifyMode
+import dev.mokkery.verifySuspend
+import {{ package_name }}.data.repository.SampleRepository
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class AddSampleItemUseCaseTest {
+    private val repository =
+        mock<SampleRepository> {
+            everySuspend { addItem(any()) } returns Unit
+        }
+    private val addSampleItem = AddSampleItemUseCase(repository)
+    private val maxLength = AddSampleItemUseCase.MAX_TITLE_LENGTH
+
+    @Test
+    fun titleIsTrimmedBeforeSaving() =
+        runTest {
+            val result = addSampleItem("  Milk  ")
+
+            assertEquals(AddSampleItemResult.Added, result)
+            verifySuspend { repository.addItem("Milk") }
+        }
+
+    @Test
+    fun blankTitleIsRejectedWithoutSaving() =
+        runTest {
+            val result = addSampleItem("   ")
+
+            assertEquals(AddSampleItemResult.Rejected.Blank, result)
+            verifySuspend(VerifyMode.not) { repository.addItem(any()) }
+        }
+
+    @Test
+    fun titleOverTheLimitIsRejectedWithoutSaving() =
+        runTest {
+            val result = addSampleItem("x".repeat(maxLength + 1))
+
+            assertEquals(AddSampleItemResult.Rejected.TooLong(maxLength), result)
+            verifySuspend(VerifyMode.not) { repository.addItem(any()) }
+        }
+
+    @Test
+    fun titleExactlyAtTheLimitIsSaved() =
+        runTest {
+            val title = "x".repeat(maxLength)
+
+            assertEquals(AddSampleItemResult.Added, addSampleItem(title))
+            verifySuspend { repository.addItem(title) }
+        }
+
+    @Test
+    fun surroundingWhitespaceDoesNotCountTowardsTheLimit() =
+        runTest {
+            val title = "x".repeat(maxLength)
+
+            assertEquals(AddSampleItemResult.Added, addSampleItem(" $title "))
+            verifySuspend { repository.addItem(title) }
+        }
+}
