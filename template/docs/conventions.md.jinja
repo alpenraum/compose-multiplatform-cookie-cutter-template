@@ -9,6 +9,7 @@ replace it — contradictions are bugs.
 - UI holds no business logic. Repositories hold no business rules and return domain types, never DB entities or wire DTOs.
 - Business logic lives in use cases: one class, one job, a single `operator fun invoke`. Use cases never touch framework types (DAO, `HttpClient`, `NavController`).
 - A read that is only query → map goes ViewModel → repository directly; a use case exists only when there is a rule to hold.
+- `androidApp` is the Android entry point only (activity, application, manifest, release config); all app code lives in `composeApp`.
 - Shared code lives in `commonMain`. Platform differences sit behind one `expect` declaration with `.android.kt` / `.ios.kt` actuals.
 
 ## Presentation
@@ -83,6 +84,7 @@ replace it — contradictions are bugs.
 - ViewModel tests inject `TestDispatchersProvider` with a `StandardTestDispatcher`, collect state with `collectInBackground`, and verify navigation on a `Navigator` mock. Test doubles never live in `commonMain`.
 - Each test names the behaviour it protects. No tests asserting that the language or a framework works.
 - No test depends on wall-clock time, real network or real hardware.
+- A test that reaches `BuildInfo` (directly or through the logger or HTTP client defaults) calls `initializeTestPlatform()` in `@BeforeTest`; on Android `androidApp` provides those values in `Application.attachBaseContext`.
 
 ## Comments
 

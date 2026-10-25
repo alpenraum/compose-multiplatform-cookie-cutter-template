@@ -1,0 +1,6 @@
+package {{ package_name }}.base
+
+actual fun initializeTestPlatform() {
+    BuildInfo.resetForTests()
+    BuildInfo.initialize(debug = true, versionName = "test", versionCode = 0)
+}

@@ -1,5 +1,6 @@
 package {{ package_name }}.data.remote
 
+import {{ package_name }}.base.initializeTestPlatform
 import {{ package_name }}.base.network.installDefaults
 import {{ package_name }}.data.repository.model.SampleItem
 import io.ktor.client.HttpClient
@@ -10,10 +11,16 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RemoteSampleDataSourceTest {
+    @BeforeTest
+    fun setUp() {
+        initializeTestPlatform()
+    }
+
     @Test
     fun wireItemsAreMappedToDomainItems() =
         runTest {

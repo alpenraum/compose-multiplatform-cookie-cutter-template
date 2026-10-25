@@ -28,6 +28,15 @@ _exclude:
   - "{% if not include_networking %}composeApp/src/*/kotlin/**/ErrorLocalizerTest.kt{% endif %}"
   - "{% if include_persistence %}composeApp/src/*/kotlin/**/InMemorySampleRepository.kt{% endif %}"
 
+_message_after_update: |
+  Template updated. If your project predates the androidApp module (AGP 9 split), check:
+    - MainActivity, the Application class, the manifest, launcher resources and proguard-rules.pro
+      moved from composeApp/src/androidMain to androidApp/ — re-apply your edits from git history.
+    - Android tests moved from androidUnitTest to androidHostTest; run `testAndroidHostTest`.
+    - README.md, CLAUDE.md and docs/conventions.md are yours and were not updated:
+      replace `:composeApp:assembleDebug` with `:androidApp:assembleDebug` and
+      `testDebugUnitTest` with `testAndroidHostTest`.
+
 _message_after_copy: |
   {{ app_display_name }} generated.
 
@@ -36,7 +45,7 @@ _message_after_copy: |
        (copier update needs a clean git repository)
     2. iOS signing: create iosApp/Configuration/Local.xcconfig with `TEAM_ID=<your team id>`
        (gitignored)
-    3. ./gradlew :composeApp:assembleDebug
+    3. ./gradlew :androidApp:assembleDebug
 
   Optional parts are chosen now. Switching one off later is a manual removal: `copier update`
   with a changed answer deletes the generated files, including your edits to them.
@@ -126,7 +135,7 @@ library_module_name:
     'switch', 'synchronized', 'throws', 'transient', 'void', 'volatile'] %}
     {% if not (library_module_name | regex_search('^[a-z][a-z0-9]*(-[a-z0-9]+)*$')) %}
     Lowercase letters and digits, single dashes between words (e.g. shared-utils).
-    {% elif library_module_name | lower in ['build', 'gradle', 'buildsrc', 'docs', 'iosapp', 'composeapp'] %}
+    {% elif library_module_name | lower in ['build', 'gradle', 'buildsrc', 'docs', 'iosapp', 'composeapp', 'androidapp'] %}
     "{{ library_module_name }}" collides with a project folder or the build output.
     {% elif (library_module_name | replace('-', '')) in reserved %}
     "{{ library_module_name | replace('-', '') }}" is a reserved word in Kotlin/Java and cannot be a package.

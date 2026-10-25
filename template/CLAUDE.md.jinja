@@ -5,7 +5,8 @@ Generated from https://github.com/alpenraum/compose-multiplatform-cookie-cutter-
 
 ## Modules
 
-- `composeApp` — the app. `commonMain` holds shared code; `androidMain` / `iosMain`{% if include_desktop %} / `desktopMain`{% endif %} hold platform code.
+- `composeApp` — shared code (Kotlin Multiplatform library). `commonMain` holds shared code; `androidMain` / `iosMain`{% if include_desktop %} / `desktopMain`{% endif %} hold platform code{% if include_desktop %} and the desktop entry point{% endif %}.
+- `androidApp` — Android entry point only (`MainActivity`, `Application`, manifest, launcher icon, release config).
 {%- if include_library_module %}
 - `{{ library_module_name }}` — Kotlin Multiplatform library used by `composeApp`.
 {%- endif %}
@@ -13,8 +14,8 @@ Generated from https://github.com/alpenraum/compose-multiplatform-cookie-cutter-
 
 ## Commands
 
-- Build Android: `./gradlew :composeApp:assembleDebug`
-- Tests: `./gradlew testDebugUnitTest`{% if include_library_module %} `testAndroidHostTest`{% endif %}{% if include_desktop %} `desktopTest`{% endif %}; iOS tests (`iosSimulatorArm64Test`) need macOS
+- Build Android: `./gradlew :androidApp:assembleDebug`
+- Tests: `./gradlew testAndroidHostTest`{% if include_desktop %} `desktopTest`{% endif %}; iOS tests (`iosSimulatorArm64Test`) need macOS
 {%- if include_networking %}
 - Dev backend: add `-Pbuildkonfig.flavor=dev` (base URLs in `composeApp/build.gradle.kts`, `buildkonfig { }`)
 {%- endif %}

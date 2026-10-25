@@ -6,4 +6,4 @@ if [ -z "${SONAR_TOKEN:-}" ]; then
   echo "Set SONAR_TOKEN to a SonarQube token." >&2
   exit 1
 fi
-./gradlew testDebugUnitTest sonar
+./gradlew testAndroidHostTest sonar

@@ -1,16 +1,41 @@
 package {{ package_name }}.base
 
 import android.os.Build
-import {{ package_name }}.BuildConfig
 
 actual object BuildInfo {
-    actual fun isDebug() = BuildConfig.DEBUG
+    private class Values(
+        val debug: Boolean,
+        val versionName: String,
+        val versionCode: Int,
+    )
+
+    private var values: Values? = null
+
+    // BuildConfig exists only in androidApp (the Android-KMP library has no build variants); its Application
+    // calls this once in attachBaseContext, before content providers or anything else can read BuildInfo.
+    fun initialize(
+        debug: Boolean,
+        versionName: String,
+        versionCode: Int,
+    ) {
+        check(values == null) { "BuildInfo.initialize() was already called." }
+        values = Values(debug, versionName, versionCode)
+    }
+
+    internal fun resetForTests() {
+        values = null
+    }
+
+    private val current: Values
+        get() = checkNotNull(values) { "BuildInfo.initialize() must run in Application.attachBaseContext before BuildInfo is read." }
+
+    actual fun isDebug() = current.debug
 
     actual fun osName() = "Android"
 
     actual fun osVersion() = Build.VERSION.SDK_INT.toString()
 
-    actual fun appVersion() = BuildConfig.VERSION_NAME
+    actual fun appVersion() = current.versionName
 
-    actual fun appBuild() = BuildConfig.VERSION_CODE.toString()
+    actual fun appBuild() = current.versionCode.toString()
 }

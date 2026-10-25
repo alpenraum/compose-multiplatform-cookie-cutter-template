@@ -51,8 +51,7 @@ jobs:
         # Not allTests: on Linux it would compile the iOS test sources, and KSP skips iOS on non-macOS hosts.
         # Unprefixed test tasks run in every module that has them (e.g. the library module).
         run: |
-          tasks=":composeApp:compileCommonMainKotlinMetadata :composeApp:assembleDebug :composeApp:assembleRelease testDebugUnitTest"
-          if ./gradlew -q tasks --all | grep -q ':testAndroidHostTest'; then tasks="$tasks testAndroidHostTest"; fi
+          tasks=":composeApp:compileCommonMainKotlinMetadata :androidApp:assembleDebug :androidApp:assembleRelease testAndroidHostTest"
           if [ -d composeApp/src/desktopMain ]; then tasks="$tasks desktopTest :composeApp:packageReleaseUberJarForCurrentOS"; fi
           ./gradlew $tasks
 
@@ -113,4 +112,4 @@ jobs:
           copier update --defaults --vcs-ref HEAD
           if grep -rIl --exclude-dir=.git '^<<<<<<< ' . ; then echo "conflict markers"; exit 1; fi
           if find . -name '*.rej' | grep -q . ; then echo "rejected hunks"; exit 1; fi
-          ./gradlew :composeApp:assembleDebug :composeApp:testDebugUnitTest
+          ./gradlew :androidApp:assembleDebug testAndroidHostTest

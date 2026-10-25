@@ -1,0 +1,71 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+// Android entry point only. AGP 9 does not allow the Android application plugin in a Kotlin Multiplatform module,
+// so the shared code (composeApp) is an Android-KMP library and this module wraps it into the app.
+plugins {
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.composeCompiler)
+}
+
+val appVersion = Properties().apply { rootProject.file("version.properties").inputStream().use(::load) }
+
+// JVM 11 everywhere (composeApp, library module, here): inline functions cannot cross to a lower target.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+    }
+}
+
+android {
+    namespace = "{{ package_name }}"
+    compileSdk =
+        libs.versions.android.compileSdk
+            .get()
+            .toInt()
+
+    defaultConfig {
+        applicationId = "{{ package_name }}"
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.android.targetSdk
+                .get()
+                .toInt()
+        versionCode = appVersion.getProperty("app.versionCode").toInt()
+        versionName = appVersion.getProperty("app.versionName")
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            isMinifyEnabled = true
+        }
+        getByName("debug") {
+            applicationIdSuffix = ".dev"
+        }
+    }
+    buildFeatures {
+        // BuildInfo in composeApp receives these values in {{ app_name }}Application.
+        buildConfig = true
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation(project(":composeApp"))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.koin.android)
+}

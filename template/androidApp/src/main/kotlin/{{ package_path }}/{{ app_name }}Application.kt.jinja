@@ -1,11 +1,22 @@
 package {{ package_name }}
 
 import android.app.Application
+import android.content.Context
+import {{ package_name }}.base.BuildInfo
 import {{ package_name }}.base.di.koinModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
 class {{ app_name }}Application : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        BuildInfo.initialize(
+            debug = BuildConfig.DEBUG,
+            versionName = BuildConfig.VERSION_NAME,
+            versionCode = BuildConfig.VERSION_CODE,
+        )
+    }
+
     override fun onCreate() {
         super.onCreate()
 

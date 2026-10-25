@@ -6,14 +6,14 @@
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 {%- endif %}
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import java.util.Properties
 {%- if include_desktop %}
+import java.util.Properties
 import java.util.UUID
 {%- endif %}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
@@ -26,12 +26,10 @@ plugins {
     alias(libs.plugins.buildKonfig)
 {%- endif %}
 }
-
+{% if include_desktop %}
 val appVersion = Properties().apply { rootProject.file("version.properties").inputStream().use(::load) }
-{%- if include_desktop %}
 val versionProperties = listOf("app.versionName", "app.versionCode").associateWith { appVersion.getProperty(it) }
-{%- endif %}
-
+{% endif %}
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
@@ -52,9 +50,30 @@ kotlin {
     }
 {%- endif %}
 
-    androidTarget {
+    // Shared code as an Android library; the app itself is the androidApp module.
+    android {
+        namespace = "{{ package_name }}.composeapp"
+        compileSdk =
+            libs.versions.android.compileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
+        }
+        // Compose resources (strings) are packaged as Android resources.
+        androidResources {
+            enable = true
+        }
+        // Runs commonTest and androidHostTest on the JVM (testAndroidHostTest).
+        withHostTestBuilder {}
+        // Travel with the library into every app that uses it.
+        optimization {
+            consumerKeepRules.publish = true
+            consumerKeepRules.files.add(project.file("consumer-rules.pro"))
         }
     }
 
@@ -130,13 +149,11 @@ kotlin {
 {%- endif %}
         }
 
-        androidUnitTest.dependencies {
+        getByName("androidHostTest").dependencies {
             implementation(libs.koin.test)
         }
 
         androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
 {%- if include_networking %}
             implementation(libs.ktor.client.okhttp)
@@ -144,7 +161,7 @@ kotlin {
         }
 {%- if include_desktop %}
 
-        val desktopMain by getting {
+        getByName("desktopMain") {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)
@@ -212,54 +229,9 @@ compose.resources {
     packageOfResClass = "{{ package_name }}.resources"
 }
 
-android {
-    namespace = "{{ package_name }}"
-    compileSdk =
-        libs.versions.android.compileSdk
-            .get()
-            .toInt()
-
-    defaultConfig {
-        applicationId = "{{ package_name }}"
-        minSdk =
-            libs.versions.android.minSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.android.targetSdk
-                .get()
-                .toInt()
-        versionCode = appVersion.getProperty("app.versionCode").toInt()
-        versionName = appVersion.getProperty("app.versionName")
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            isMinifyEnabled = true
-        }
-        getByName("debug") {
-            applicationIdSuffix = ".dev"
-        }
-    }
-    buildFeatures {
-        buildConfig = true
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-}
-
 dependencies {
-    debugImplementation(compose.uiTooling)
+    // @Preview rendering in the IDE; the Android-KMP library has no debug variant.
+    "androidRuntimeClasspath"(compose.uiTooling)
 }
 {%- if include_desktop %}
 
@@ -269,7 +241,7 @@ compose.desktop {
         jvmArgs += versionProperties.map { (key, value) -> "-D$key=$value" }
 
         buildTypes.release.proguard {
-            configurationFiles.from(project.file("proguard-desktop.pro"))
+            configurationFiles.from(project.file("consumer-rules.pro"), project.file("proguard-desktop.pro"))
         }
 
         nativeDistributions {

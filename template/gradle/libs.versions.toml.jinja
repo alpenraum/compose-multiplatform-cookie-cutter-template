@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.2"
+agp = "9.4.1"
 {%- if include_networking %}
 buildKonfig = "0.17.1"
 {%- endif %}
@@ -31,7 +31,7 @@ mokkery = "3.0.0"
 slf4j = "2.0.17"
 {%- endif %}
 {%- if include_sonar %}
-sonarqube = "7.2.2.6593"
+sonarqube = "7.5.0.8588"
 {%- endif %}
 {%- if include_persistence %}
 room = "2.8.3"
@@ -84,9 +84,7 @@ slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-{%- if include_library_module %}
 androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
-{%- endif %}
 {%- if include_networking %}
 buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildKonfig" }
 {%- endif %}

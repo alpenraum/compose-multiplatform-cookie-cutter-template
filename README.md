@@ -114,6 +114,19 @@ boundary, `Navigator`), Koin with annotations, typed error pipeline (`AppError` 
 `ErrorView`), Kermit logging, a sample list + detail feature with Mokkery tests, `docs/conventions.md`,
 a `CLAUDE.md` skeleton and Dependabot.
 
+## Updating projects generated before the androidApp split
+
+The template moved to AGP 9, which no longer allows the Android application plugin in a Kotlin
+Multiplatform module. `composeApp` is now a library, and the Android entry point is the new
+`androidApp` module. `copier update` moves the files, but it does not carry over your edits to them:
+
+- `MainActivity`, the `Application` class, `AndroidManifest.xml`, launcher resources and
+  `proguard-rules.pro` moved from `composeApp/src/androidMain` to `androidApp/`.
+- Android unit tests moved from `androidUnitTest` to `androidHostTest`; run `testAndroidHostTest`.
+- Build the app with `:androidApp:assembleDebug`.
+
+Re-apply your edits from git history, and update the commands in your `README.md` and `CLAUDE.md`.
+
 ## Developing the template
 
 Template sources live in `template/`; only `*.jinja` files are rendered, everything else is copied

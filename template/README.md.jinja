@@ -6,8 +6,8 @@ Compose Multiplatform app for Android{% if include_desktop %}, iOS and desktop{%
 ## Getting started
 
 ```bash
-./gradlew :composeApp:assembleDebug          # Android
-./gradlew :composeApp:testDebugUnitTest      # unit tests (JVM)
+./gradlew :androidApp:assembleDebug          # Android
+./gradlew testAndroidHostTest               # unit tests (JVM)
 {%- if include_desktop %}
 ./gradlew :composeApp:run                    # desktop
 {%- endif %}
@@ -26,7 +26,8 @@ Builds use the production URL unless you pass `-Pbuildkonfig.flavor=dev`.
 | Path | Contents |
 |---|---|
 | `composeApp/src/commonMain` | Shared code: `base/` (architecture, DI, errors, logging), `ui/`, `usecase/`, `data/` |
-| `composeApp/src/androidMain`, `iosMain`{% if include_desktop %}, `desktopMain`{% endif %} | Platform entry points and `actual` implementations |
+| `composeApp/src/androidMain`, `iosMain`{% if include_desktop %}, `desktopMain`{% endif %} | `actual` implementations{% if include_desktop %} and the desktop entry point{% endif %} |
+| `androidApp` | Android entry point: `MainActivity`, `Application`, manifest, launcher icon, release config |
 {%- if include_persistence %}
 | `composeApp/db-schemas` | Exported Room schemas — commit them (see the README inside) |
 {%- endif %}
